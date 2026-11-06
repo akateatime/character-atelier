@@ -1,0 +1,191 @@
+{
+  "ui": {
+    "Commissions": "커미션 작품",
+    "Characters through the eyes and words of other artists.": "다른 창작자의 그림과 글로 만나는 캐릭터의 새로운 모습.",
+    "Artist social media ↗": "창작자 SNS ↗",
+    "Written work": "글 작품",
+    "No commissions yet.": "아직 등록된 커미션 작품이 없습니다.",
+    "Showing {start}–{end} of {total} works": "전체 {total}개 작품 중 {start}～{end}개",
+    "Pagination": "작품 페이지 탐색",
+    "Page {page} of {pages}": "{page}／{pages} 페이지",
+    "← Previous page": "← 이전 페이지",
+    "Next page →": "다음 페이지 →",
+    "TRPG": "TRPG",
+    "Use the mouse wheel to zoom. Drag empty space to pan. Ctrl/Command + wheel keeps browser zoom. There is nothing to pan when the map fits.": "마우스 휠로 확대·축소하고 빈 공간을 드래그하여 이동하세요. Ctrl／Command＋휠은 브라우저 확대·축소로 유지됩니다. 전체 지도가 보이면 이동할 필요가 없습니다.",
+    "Map zoom": "관계도 확대 및 축소",
+    "Zoom level": "확대 비율",
+    "Zoom in": "확대",
+    "Zoom out": "축소",
+    "Reset zoom": "원래 크기",
+    "Fit map": "전체 보기",
+    "Projects / TRPG": "창작 프로젝트 / TRPG",
+    "Creative Projects": "창작 프로젝트",
+    "Manga": "만화",
+    "Illustrated story": "삽화 이야기",
+    "Participating characters": "참여 캐릭터",
+    "No projects yet.": "아직 프로젝트가 없습니다.",
+    "No TRPG scenarios yet.": "아직 TRPG 시나리오가 없습니다.",
+    "No participants yet.": "아직 참여 캐릭터가 없습니다.",
+    "Manage website": "사이트 관리",
+    "Relationships": "관계도",
+    "Explore {name}": "{name}의 이야기와 작품 둘러보기",
+    "Character relationship diagram": "캐릭터 관계도",
+    "Hover or focus a line to read its story. Tap to keep it open. Select a portrait, chapters, or gallery to explore.": "선 위에 마우스를 올리거나 키보드로 선택하면 관계 소개가 나타나요. 탭하면 고정되고, 다시 탭하거나 Esc를 누르면 닫혀요. 초상화, 챕터, 갤러리를 선택해 둘러보세요.",
+    "No relationships recorded yet.": "아직 기록된 관계가 없어요.",
+    "Relationship map. Scroll horizontally to explore.": "캐릭터 관계도. 가로로 스크롤하여 둘러보세요.",
+    "Creative journeys": "창작과 모험의 발자취",
+    "Art Projects": "참여한 아트 프로젝트",
+    "TRPG Scenarios": "참여한 TRPG 시나리오",
+    "Project details →": "자세히 보기 →",
+    "Threads of fate": "운명의 실",
+    "Every meeting leaves a thread. Follow it into their worlds.": "모든 만남은 하나의 실을 남겨요. 그 실을 따라 그들의 세계로 들어가 보세요.",
+    "Dark mode": "다크 모드",
+    "Language": "언어",
+    "Skip to content": "본문으로 이동",
+    "Character Atelier home": "Character Atelier 홈",
+    "Main navigation": "주 메뉴",
+    "Discover": "둘러보기",
+    "Characters": "캐릭터",
+    "Gallery": "갤러리",
+    "Stories": "이야기",
+    "An original character archive": "오리지널 캐릭터 기록실",
+    "A home for characters. A place for their stories.": "캐릭터가 머무는 집, 이야기가 자라는 곳.",
+    "Made for the worlds you imagine.": "당신이 상상하는 세계를 위해.",
+    "View all →": "모두 보기 →",
+    "Chapter {number}": "제{number}장",
+    "No chapters yet. The next story is still being dreamed.": "아직 챕터가 없습니다. 다음 이야기는 꿈속에서 자라고 있어요.",
+    "Meet the characters →": "캐릭터 만나기 →",
+    "Explore the gallery →": "갤러리 둘러보기 →",
+    "A collection of extraordinary lives": "특별한 삶을 모아 둔 곳",
+    "Every character has a story": "모든 캐릭터에게는 이야기가 있어요",
+    "characters": "명의 캐릭터",
+    "artworks": "점의 작품",
+    "chapters": "개의 챕터",
+    "From the storybook": "이야기책을 펼치면",
+    "Little chapters from bigger worlds.": "작은 챕터에서 펼쳐지는 넓은 세계.",
+    "A little corner of the imagination": "상상 속 작은 한구석",
+    "Meet the residents": "주민들을 만나 보세요",
+    "Original characters, each with a world of their own.": "저마다 자신만의 세계를 살아가는 오리지널 캐릭터들.",
+    "The character directory": "캐릭터 도감",
+    "Find a familiar face, or discover someone new.": "익숙한 얼굴을 찾거나 새로운 누군가를 만나 보세요.",
+    "Search names, worlds, or details...": "이름, 세계, 설정 검색…",
+    "Search characters": "캐릭터 검색",
+    "Filter characters by world": "세계별 캐릭터 필터",
+    "No characters found. Try another name or world.": "캐릭터를 찾지 못했어요. 다른 이름이나 세계를 검색해 보세요.",
+    "{count} character found": "캐릭터 {count}명을 찾았어요",
+    "{count} characters found": "캐릭터 {count}명을 찾았어요",
+    "All worlds": "모든 세계",
+    "Close": "닫기",
+    "Art by {credit}": "그림: {credit}",
+    "View {title} by {credit}": "{title} 보기 (그림: {credit})",
+    "No artwork yet. This gallery is waiting for its first piece.": "아직 작품이 없어요. 첫 번째 그림을 기다리고 있습니다.",
+    "Breadcrumb": "현재 위치",
+    "Character sections": "캐릭터 정보 메뉴",
+    "About": "소개",
+    "Chapters": "챕터",
+    "The story so far": "지금까지의 이야기",
+    "Chapter navigation": "챕터 탐색",
+    "← Previous chapter": "← 이전 챕터",
+    "All chapters": "전체 챕터",
+    "Next chapter →": "다음 챕터 →",
+    "A path not yet drawn": "아직 그려지지 않은 길",
+    "Page not found": "페이지를 찾을 수 없어요",
+    "This character, chapter, or page does not exist.": "이 캐릭터, 챕터 또는 페이지가 존재하지 않습니다.",
+    "Back to the atelier": "아틀리에로 돌아가기",
+    "The art wall": "작품 전시벽",
+    "Collected moments": "모아 둔 순간들",
+    "Portraits, places, and little glimpses into their lives.": "초상화와 풍경, 그리고 일상의 작은 조각들.",
+    "The storybook": "이야기책",
+    "Stories worth staying for": "잠시 머물고 싶은 이야기",
+    "Choose a chapter and wander into another world.": "챕터를 골라 또 다른 세계로 떠나 보세요."
+  },
+  "site": {
+    "eyebrow": "상상 속 삶을 기록하는 곳",
+    "title": "작은 캐릭터.\n끝없는 세계.",
+    "description": "상상 속 고요한 한구석에 오신 것을 환영해요. 오리지널 캐릭터를 만나고, 그들의 순간을 모으며, 이야기 속으로 빠져 보세요.",
+    "heroAlt": "복숭아빛 달 아래 고요한 정원과 아치형 문을 그린 오리지널 일러스트.",
+    "noteTitle": "모든 세계는 누군가로부터 시작돼요.",
+    "note": "공책에 적은 이름 하나. 여백에 그린 스케치. 마음을 떠나지 않는 이야기. 이곳은 그 모두를 위한 집이에요."
+  },
+  "relationships": {
+    "mira-rowan": {
+      "label": "말 없는 편지",
+      "description": "로언은 매주 목요일, 대부분 비어 있는 봉투를 들고 미라의 온실을 찾아와요. 두 사람의 고요한 우정은 작은 일상의 의식과, 어떤 마음에는 글이 필요 없다는 믿음으로 이어져 있습니다."
+    }
+  },
+  "characters": {
+    "mira": {
+      "artProjects": {},
+      "trpgScenarios": {},
+      "name": "미라 에버펀",
+      "world": "고요한 정원",
+      "summary": "잊힌 이름을 모으고 불가능한 꽃을 피워 내는 견습 식물학자.",
+      "portraitAlt": "짙은 초록 머리와 크림색 옷깃, 작은 금빛 꽃으로 표현한 미라의 초상화.",
+      "tags": ["식물학자", "다정한 영혼", "판타지"],
+      "facts": { "나이": "24세", "대명사": "그녀", "직업": "견습 식물학자", "사는 곳": "유리 온실", "창작자": "당신의 이름" },
+      "about": [
+        { "title": "작은 것들을 지키는 사람", "text": "누군가 이름을 기억한다면 완전히 사라지는 것은 없다고 미라는 믿어요. 마을 가장자리의 낡은 유리 온실에서, 이야기를 들려줘야만 꽃을 피우는 식물을 돌봅니다.\n\n어린 싹에는 참을성이 많지만 잠긴 문에는 그만큼 너그럽지 않아요. 손톱 밑에는 언제나 흙이 조금 남아 있죠." },
+        { "title": "외모와 성격", "text": "이끼빛 머리카락, 오래 입어 부드러워진 리넨 원피스, 접은 종이로 가득한 주머니. 처음에는 조용하지만 나뭇잎 하나의 이야기를 들어 줄 사람을 만나면 놀랄 만큼 말이 많아져요." },
+        { "title": "인연", "text": "로언은 매주 목요일 온실에 편지를 배달해요. 대부분의 봉투가 비어 있다는 말은 둘 다 꺼내지 않죠. 어떤 마음에는 글이 필요 없다는 데 두 사람 모두 동의하니까요." }
+      ],
+      "gallery": [
+        { "title": "온실을 지키는 사람", "alt": "부드러운 세이지색 배경 앞, 초록 머리에 작은 꽃을 꽂은 미라.", "credit": "Character Atelier 예시 작품" },
+        { "title": "달꽃이 피는 곳", "alt": "연둣빛 나무와 분홍 꽃에 둘러싸인 아치형 정원 문.", "credit": "Character Atelier 예시 작품" }
+      ],
+      "chapters": {
+        "the-first-seed": {
+          "title": "첫 번째 씨앗",
+          "credit": "Character Atelier 예시 작품",
+          "paragraphs": [
+            "봉투에는 우표가 없었다. 미라는 온실 문 아래 끼워진 봉투를 발견했다. 아침 햇살이 바닥에 작고 따뜻한 네모를 만드는 바로 그 자리였다.",
+            "안에는 마침표보다 크지 않은 씨앗과, 어딘가 낯익은 글씨로 쓴 쪽지가 있었다. 나 대신 이것을 기억해 주세요.",
+            "미라는 가장 작은 화분을 가져왔다. 물론 현실적인 질문은 많았다. 어떤 흙을 쓸까? 물은 얼마나 줄까? 하지만 씨앗은 이미 손바닥 안에서 따뜻해지고 있었고, 그런 질문은 나중이어도 괜찮았다.",
+            "“네 이름부터 알아볼까.” 미라가 말했다.",
+            "밖에서는 마을 시계가 존재하지 않는 시각을 알렸다."
+          ]
+        },
+        "an-hour-for-growing": {
+          "title": "자라기 위한 시간",
+          "credit": "Character Atelier 예시 작품",
+          "paragraphs": [
+            "다음 날 아침, 씨앗에서 은빛 잎 하나가 돋았다. 잎은 창문이 아니라 미라가 보내지 못한 편지를 보관하는 닫힌 서랍 쪽으로 기울어 있었다.",
+            "화분을 옮기자 잎이 방향을 틀었다. 다시 옮겨도 잎은 또 돌아섰다. 나침반처럼 참을성 있고 확실하게.",
+            "마침내 미라는 서랍을 열었다. 가장 오래된 편지는 십 년 뒤의 자신에게 보내는 것이었다.",
+            "“너무 일찍 왔네.” 미라가 식물에게 말했다. 은빛 잎이 펼쳐지고, 온실 어딘가에서 작고 있을 수 없는 종소리가 울리기 시작했다."
+          ]
+        }
+      }
+    },
+    "rowan": {
+      "artProjects": {},
+      "trpgScenarios": {},
+      "name": "로언 베일",
+      "world": "고요한 정원",
+      "summary": "아직 만들어지지 않은 길의 지도를 들고 떠도는 우편배달부.",
+      "portraitAlt": "적갈색 머리에 파란 코트를 입고 우편 가방을 멘 로언의 초상화.",
+      "tags": ["우편배달부", "방랑자", "판타지"],
+      "facts": { "나이": "27세", "대명사": "They / them (성 중립)", "직업": "우편배달부", "사는 곳": "길이 끝나는 곳 어디든", "창작자": "당신의 이름" },
+      "about": [
+        { "title": "사이의 공간으로 보내는 편지", "text": "어떤 주소는 어느 지도에도 없어요. 그래도 로언은 배달합니다. 가방은 비바람을 견디지만 장화는 그렇지 못하고, 방향 감각은 길 끝에서 누가 기다리는지에 달려 있죠." },
+        { "title": "외모와 성격", "text": "구릿빛 머리카락, 넉넉한 파란 코트, 그리고 끝내지 못한 일을 가리키는 황동 나침반. 로언은 무심한 듯한 유머가 있고, 길을 잃은 사람에게 아주 정확한 길 안내를 해 주는 버릇이 있어요." },
+        { "title": "작은 비밀", "text": "로언은 칠 년 동안 ‘앞으로의 당신에게’라고 적힌 편지를 품고 다녔어요. 그 편지를 열면 배달한 셈이 되는지는 아직 결정하지 못했죠." }
+      ],
+      "gallery": [
+        { "title": "목적지와 목적지 사이", "alt": "살구색 원을 배경으로 파란 코트와 갈색 우편 가방을 착용한 로언.", "credit": "Character Atelier 예시 작품" }
+      ],
+      "chapters": {
+        "the-unmarked-road": {
+          "title": "지도에 없는 길",
+          "credit": "Character Atelier 예시 작품",
+          "paragraphs": [
+            "월요일에는 마을 밖으로 나가는 길이 열두 개였다. 목요일에는 열세 개가 되었다.",
+            "로언이 알아챈 것은 새 길에서 비 냄새가 났기 때문이다. 한 주 내내 맑았는데도. 게다가 가방에는 ‘전에는 없었던 길 1번지’로 보내는 편지가 들어 있었다.",
+            "“참 구체적이네.” 로언은 중얼거리며 장화를 확인했다.",
+            "길 끝에는 창문 없는 작은 집이 서 있었다. 현관문의 우편함은 미소 짓는 모양이었다.",
+            "로언이 문을 두드렸다. 반대편에서 자신의 목소리가 말했다. “딱 맞춰 왔네.”"
+          ]
+        }
+      }
+    }
+  }
+}

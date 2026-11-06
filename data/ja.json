@@ -1,0 +1,191 @@
+{
+  "ui": {
+    "Commissions": "依頼作品",
+    "Characters through the eyes and words of other artists.": "ほかのクリエイターの絵と言葉で描かれた、キャラクターの新たな表情。",
+    "Artist social media ↗": "クリエイターの SNS ↗",
+    "Written work": "文章作品",
+    "No commissions yet.": "依頼作品はまだありません。",
+    "Showing {start}–{end} of {total} works": "全 {total} 作品中 {start}～{end} 件",
+    "Pagination": "作品のページ切り替え",
+    "Page {page} of {pages}": "{page}／{pages} ページ",
+    "← Previous page": "← 前のページ",
+    "Next page →": "次のページ →",
+    "TRPG": "TRPG",
+    "Use the mouse wheel to zoom. Drag empty space to pan. Ctrl/Command + wheel keeps browser zoom. There is nothing to pan when the map fits.": "マウスホイールで拡大縮小し、空白部分をドラッグして移動できます。Ctrl／Command＋ホイールはブラウザーの拡大縮小です。全体が収まっている場合は移動しません。",
+    "Map zoom": "関係図の拡大縮小",
+    "Zoom level": "表示倍率",
+    "Zoom in": "拡大",
+    "Zoom out": "縮小",
+    "Reset zoom": "元のサイズ",
+    "Fit map": "全体を表示",
+    "Projects / TRPG": "創作企画 / TRPG",
+    "Creative Projects": "創作企画",
+    "Manga": "漫画",
+    "Illustrated story": "イラスト付き物語",
+    "Participating characters": "参加キャラクター",
+    "No projects yet.": "企画はまだありません。",
+    "No TRPG scenarios yet.": "TRPG シナリオはまだありません。",
+    "No participants yet.": "参加キャラクターはまだいません。",
+    "Manage website": "サイト管理",
+    "Relationships": "関係図",
+    "Explore {name}": "{name}の物語と作品を探す",
+    "Character relationship diagram": "キャラクター関係図",
+    "Hover or focus a line to read its story. Tap to keep it open. Select a portrait, chapters, or gallery to explore.": "線にカーソルを合わせるかキーボードで選ぶと、関係の紹介が表示されます。タップで固定し、再度タップか Esc で閉じられます。肖像・章・ギャラリーから世界を巡りましょう。",
+    "No relationships recorded yet.": "関係はまだ記録されていません。",
+    "Relationship map. Scroll horizontally to explore.": "キャラクター関係図。横にスクロールして探索できます。",
+    "Creative journeys": "創作と冒険の足跡",
+    "Art Projects": "参加した創作企画",
+    "TRPG Scenarios": "参加した TRPG シナリオ",
+    "Project details →": "詳細を見る →",
+    "Threads of fate": "運命の糸",
+    "Every meeting leaves a thread. Follow it into their worlds.": "出会いは一本の糸を残す。その糸をたどって、それぞれの世界へ。",
+    "Dark mode": "ダークモード",
+    "Language": "言語",
+    "Skip to content": "本文へ移動",
+    "Character Atelier home": "Character Atelier ホーム",
+    "Main navigation": "メインナビゲーション",
+    "Discover": "見つける",
+    "Characters": "キャラクター",
+    "Gallery": "ギャラリー",
+    "Stories": "物語",
+    "An original character archive": "創作キャラクターの記録室",
+    "A home for characters. A place for their stories.": "キャラクターの居場所。物語が息づく場所。",
+    "Made for the worlds you imagine.": "あなたが思い描く世界のために。",
+    "View all →": "すべて見る →",
+    "Chapter {number}": "第{number}章",
+    "No chapters yet. The next story is still being dreamed.": "まだ章はありません。次の物語は夢の中で育っています。",
+    "Meet the characters →": "キャラクターに会う →",
+    "Explore the gallery →": "ギャラリーを巡る →",
+    "A collection of extraordinary lives": "かけがえのない人生を集めて",
+    "Every character has a story": "誰もが、自分だけの物語を持っている",
+    "characters": "人のキャラクター",
+    "artworks": "点の作品",
+    "chapters": "章の物語",
+    "From the storybook": "物語のページから",
+    "Little chapters from bigger worlds.": "小さな章から、広がる世界へ。",
+    "A little corner of the imagination": "想像の片隅で",
+    "Meet the residents": "住人たちに会う",
+    "Original characters, each with a world of their own.": "それぞれの世界を生きる、創作キャラクターたち。",
+    "The character directory": "キャラクター名鑑",
+    "Find a familiar face, or discover someone new.": "懐かしい顔を探しても、新しい誰かと出会っても。",
+    "Search names, worlds, or details...": "名前・世界・設定を検索…",
+    "Search characters": "キャラクターを検索",
+    "Filter characters by world": "世界で絞り込む",
+    "No characters found. Try another name or world.": "見つかりませんでした。別の名前や世界をお試しください。",
+    "{count} character found": "{count}人が見つかりました",
+    "{count} characters found": "{count}人が見つかりました",
+    "All worlds": "すべての世界",
+    "Close": "閉じる",
+    "Art by {credit}": "作画：{credit}",
+    "View {title} by {credit}": "「{title}」を見る（作画：{credit}）",
+    "No artwork yet. This gallery is waiting for its first piece.": "まだ作品はありません。最初の一枚を待っています。",
+    "Breadcrumb": "現在位置",
+    "Character sections": "キャラクター情報",
+    "About": "プロフィール",
+    "Chapters": "章一覧",
+    "The story so far": "これまでの物語",
+    "Chapter navigation": "章のナビゲーション",
+    "← Previous chapter": "← 前の章",
+    "All chapters": "すべての章",
+    "Next chapter →": "次の章 →",
+    "A path not yet drawn": "まだ描かれていない道",
+    "Page not found": "ページが見つかりません",
+    "This character, chapter, or page does not exist.": "このキャラクター、章、またはページは存在しません。",
+    "Back to the atelier": "アトリエに戻る",
+    "The art wall": "作品の壁",
+    "Collected moments": "集めたひととき",
+    "Portraits, places, and little glimpses into their lives.": "肖像、風景、そして暮らしの小さな一場面。",
+    "The storybook": "物語の本",
+    "Stories worth staying for": "心を留めたくなる物語",
+    "Choose a chapter and wander into another world.": "章を選んで、もうひとつの世界へ。"
+  },
+  "site": {
+    "eyebrow": "想像の中の人生を綴る",
+    "title": "小さなキャラクター。\n果てしない世界。",
+    "description": "想像の静かな片隅へようこそ。創作キャラクターと出会い、その瞬間を集め、物語の中を旅しましょう。",
+    "heroAlt": "桃色の月が浮かぶ静かな庭と、アーチ型の扉を描いたオリジナルイラスト。",
+    "noteTitle": "どんな世界も、誰かから始まる。",
+    "note": "ノートに書いた名前。余白のスケッチ。心から離れない物語。ここは、そのすべての居場所です。"
+  },
+  "relationships": {
+    "mira-rowan": {
+      "label": "言葉のない手紙",
+      "description": "ローワンは毎週木曜日、ほとんど空の封筒を持ってミラの温室を訪れます。小さな習慣と、言葉のいらない便りもあるという思いが、二人の穏やかな友情をつないでいます。"
+    }
+  },
+  "characters": {
+    "mira": {
+      "artProjects": {},
+      "trpgScenarios": {},
+      "name": "ミラ・エヴァーファーン",
+      "world": "静かな庭",
+      "summary": "忘れられた名前を集め、不思議な花を育てる見習い植物学者。",
+      "portraitAlt": "深緑の髪に小さな金色の花を飾り、生成りの襟を着けたミラの肖像。",
+      "tags": ["植物学者", "穏やかな心", "ファンタジー"],
+      "facts": { "年齢": "24歳", "代名詞": "彼女", "職業": "見習い植物学者", "住まい": "ガラスの温室", "作者": "あなたの名前" },
+      "about": [
+        { "title": "小さなものの守り手", "text": "誰かが名前を覚えていれば、本当になくなるものはない。ミラはそう信じています。町外れの古い温室で、物語を聞かせたときだけ咲く植物を世話しています。\n\n苗には辛抱強く、鍵のかかった扉には少し短気。爪の間には、いつも土が残っています。" },
+        { "title": "外見と性格", "text": "苔色の髪、着慣れた麻のワンピース、折り畳んだ紙でいっぱいのポケット。初めは静かですが、一枚の葉の話に耳を傾けてくれる人がいれば、驚くほどおしゃべりになります。" },
+        { "title": "つながり", "text": "ローワンは毎週木曜日、温室に手紙を届けます。封筒のほとんどが空だということには、二人とも触れません。言葉のいらない便りもある、と二人は思っています。" }
+      ],
+      "gallery": [
+        { "title": "温室の守り手", "alt": "柔らかなセージ色の背景に、緑の髪に小花を飾ったミラ。", "credit": "Character Atelier サンプル" },
+        { "title": "月の花が咲く場所", "alt": "淡い緑の木々と桃色の花に囲まれたアーチ型の庭の門。", "credit": "Character Atelier サンプル" }
+      ],
+      "chapters": {
+        "the-first-seed": {
+          "title": "最初の種",
+          "credit": "Character Atelier サンプル",
+          "paragraphs": [
+            "封筒には切手がなかった。ミラは温室の扉の下に挟まったそれを見つけた。朝日が床に描く、小さく暖かな四角のちょうど真ん中だった。",
+            "中には句点ほどの種と、見覚えがありそうな筆跡のメモがあった。これを、私の代わりに覚えていてください。",
+            "ミラは一番小さな鉢を取ってきた。もちろん、考えることはいろいろあった。土は何がいい？ 水はどれくらい？ けれど種はもう掌で暖かくなっていて、そんなことは後回しでよかった。",
+            "「まずは、あなたの名前からね」とミラは言った。",
+            "外で、町の時計が存在しない時刻を告げた。"
+          ]
+        },
+        "an-hour-for-growing": {
+          "title": "育つための時間",
+          "credit": "Character Atelier サンプル",
+          "paragraphs": [
+            "翌朝、種から銀色の葉が一枚出ていた。窓ではなく、ミラが出さなかった手紙をしまう、閉じた引き出しのほうへ傾いていた。",
+            "鉢を動かすと、葉が向きを変えた。もう一度動かすと、また変えた。方位磁針のように、辛抱強く、迷いなく。",
+            "とうとうミラは引き出しを開けた。一番古い手紙の宛先は、十年後の自分だった。",
+            "「早すぎるわ」と植物に話しかけた。銀の葉が開き、温室のどこかで、小さな、あるはずのない鈴が鳴り始めた。"
+          ]
+        }
+      }
+    },
+    "rowan": {
+      "artProjects": {},
+      "trpgScenarios": {},
+      "name": "ローワン・ヴェイル",
+      "world": "静かな庭",
+      "summary": "まだできていない道の地図を持ち歩く、旅する郵便配達人。",
+      "portraitAlt": "赤茶色の髪に青いコートを着て、配達鞄を下げたローワンの肖像。",
+      "tags": ["郵便配達人", "旅人", "ファンタジー"],
+      "facts": { "年齢": "27歳", "代名詞": "They / them（中性）", "職業": "郵便配達人", "住まい": "道が終わるところならどこでも", "作者": "あなたの名前" },
+      "about": [
+        { "title": "はざまへ届ける手紙", "text": "どの地図にもない住所があります。それでもローワンは届けます。鞄は雨風に強くても、靴はそうではありません。方向感覚は、道の向こうで誰が待っているか次第です。" },
+        { "title": "外見と性格", "text": "銅色の髪、大きな青いコート、そしてやり残したことを指す真鍮の羅針盤。ローワンには淡々としたユーモアがあり、迷った人に的確な道案内をする癖があります。" },
+        { "title": "小さな秘密", "text": "七年間、ローワンは「これからのあなたへ」と宛てられた手紙を持ち続けています。開封すれば配達したことになるのか、まだ決められずにいます。" }
+      ],
+      "gallery": [
+        { "title": "目的地と目的地のあいだ", "alt": "杏色の円を背景に、青いコートと茶色の配達鞄を身に着けたローワン。", "credit": "Character Atelier サンプル" }
+      ],
+      "chapters": {
+        "the-unmarked-road": {
+          "title": "地図にない道",
+          "credit": "Character Atelier サンプル",
+          "paragraphs": [
+            "月曜日、町を出る道は十二本だった。木曜日には十三本になっていた。",
+            "ローワンが気づいたのは、その新しい道が雨の匂いをしていたからだ。一週間ずっと晴れだったのに。しかも鞄には「前にはなかった道、一番地」宛ての手紙が入っていた。",
+            "「ずいぶん具体的だね」とつぶやいて、靴を確かめた。",
+            "道の終わりには、窓のない小さな家があった。玄関の郵便受けは、微笑みの形をしていた。",
+            "ローワンは扉を叩いた。向こう側から、自分の声が言った。「ちょうどいい時間だね」"
+          ]
+        }
+      }
+    }
+  }
+}

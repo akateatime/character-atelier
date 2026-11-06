@@ -1,0 +1,49 @@
+.editor-status { padding: 14px 18px; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; white-space: pre-wrap; overflow-wrap: anywhere; min-height: 52px; }
+.editor-status:empty { display: none; }
+.editor-status.is-error { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.editor-publish-bar, .editor-actions, .editor-section-heading, .editor-entry-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.editor-publish-bar { position: sticky; top: 0; z-index: 4; background: var(--paper); border: 1px solid var(--line); padding: 12px; border-radius: 12px; box-shadow: 0 6px 20px #0001; }
+.editor-button { border: 1px solid var(--input-border); color: var(--ink); background: var(--surface); padding: 9px 14px; border-radius: 8px; font-size: 13px; }
+.editor-button.primary { background: var(--button); color: var(--button-text); border-color: var(--button); font-weight: 700; }
+.editor-button.danger { color: var(--accent); border-color: var(--accent); }
+.editor-button:disabled { opacity: .5; cursor: wait; }
+.editor-field { display: flex; flex-direction: column; min-width: 0; gap: 7px; margin: 15px 0; font-size: 13px; }
+.editor-field > span { font-weight: 600; }
+.editor-field input, .editor-field textarea, .editor-field select { width: 100%; min-width: 0; border: 1px solid var(--input-border); background: var(--surface); color: var(--ink); border-radius: 7px; padding: 10px 12px; }
+.editor-field input[type=file] { padding: 8px; }
+.editor-field textarea { resize: vertical; font: inherit; line-height: 1.8; }
+.editor-field small, .editor-hint { color: var(--muted); font-size: 12px; }
+.editor-field input:disabled, .editor-field textarea:disabled { opacity: .65; }
+.editor-tools { display: grid; grid-template-columns: 1fr 1.5fr auto; align-items: center; gap: 20px; }
+.editor-work, .editor-setup, .editor-login { padding: 26px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); min-width: 0; }
+.editor-login { max-width: 600px; margin-top: 25px; }
+.editor-work h2 { font-size: 28px; }
+.editor-section-heading { justify-content: space-between; margin-bottom: 15px; }
+.editor-section-heading h2, .editor-section-heading h3 { margin: 0; }
+.editor-collection { border-top: 1px solid var(--line); margin-top: 30px; padding-top: 24px; }
+.editor-collection h3 { font-family: inherit; font-size: 19px; }
+.editor-entry { border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-top: 20px; background: var(--surface); }
+.editor-entry-actions strong { margin-right: auto; font-size: 14px; }
+.editor-entry-actions button { padding: 6px 10px; font-size: 12px; }
+.editor-fact { display: grid; grid-template-columns: 1fr 1.5fr auto; gap: 12px; align-items: center; }
+.editor-image-field { display: grid; grid-template-columns: 120px 1fr; gap: 18px; align-items: center; border: 1px dashed var(--line); padding: 18px; border-radius: 12px; margin: 20px 0; }
+.editor-image-field img { width: 120px; max-height: 150px; object-fit: contain; border-radius: 7px; grid-row: span 2; background: var(--green); }
+.editor-image-field .editor-field { margin: 0; }
+.editor-danger-zone { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--accent); }
+.editor-draft-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 20px 0; padding: 20px; border: 1px solid var(--gold); border-radius: 12px; background: var(--surface); }
+.editor-confirm { max-width: min(520px, 92vw); }
+.editor-confirm p { color: var(--ink); font-size: 14px; margin: 20px 0; }
+[aria-busy=true] .editor-work { opacity: .7; }
+@media (max-width: 800px) {
+  .editor-tools { grid-template-columns: 1fr; gap: 0; }
+  .editor-fact { grid-template-columns: 1fr; gap: 0; border-bottom: 1px solid var(--line); padding-bottom: 15px; }
+  .editor-fact .editor-field { margin-bottom: 5px; }
+  .editor-image-field { grid-template-columns: 1fr; }
+  .editor-image-field img { grid-row: auto; }
+  .editor-work, .editor-setup, .editor-login { padding: 18px; }
+  .editor-entry { padding: 14px; }
+  .editor-publish-bar { position: static; }
+}
+.editor-project-checks { border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin: 18px 0; }
+.editor-project-checks label, .editor-membership { display: flex; align-items: center; gap: 10px; margin: 12px 0; overflow-wrap: anywhere; }
+.editor-project-checks input, .editor-membership input { flex: 0 0 auto; width: 20px; height: 20px; }
