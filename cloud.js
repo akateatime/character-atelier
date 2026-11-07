@@ -4,12 +4,16 @@ window.AtelierCloud = (() => {
   let config;
   let session;
   let sessionKey;
+  let debugMode = false;
   const maximumImageSize = 5 * 1024 * 1024;
   const mimeExtensions = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif' };
 
   function parseConfig(value) {
     if (!value || typeof value.supabaseUrl !== 'string' || typeof value.publishableKey !== 'string') {
       throw new Error('雲端設定格式錯誤。Cloud configuration needs supabaseUrl and publishableKey.');
+    }
+    if (Object.hasOwn(value, 'debugMode') && typeof value.debugMode !== 'boolean') {
+      throw new Error('debugMode must be true or false.');
     }
     if (!value.supabaseUrl && !value.publishableKey) return null;
     if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(value.supabaseUrl)) {
@@ -29,7 +33,14 @@ window.AtelierCloud = (() => {
   async function init() {
     const response = await fetch('cloud-config.json', { cache: 'no-store' });
     if (!response.ok) throw new Error(`雲端設定無法讀取 (HTTP ${response.status})。`);
-    config = parseConfig(await response.json());
+    const settings = await response.json();
+    config = parseConfig(settings);
+    debugMode = settings.debugMode === true;
+    if (debugMode && config) throw new Error('本機除錯模式不可與雲端設定同時啟用。');
+    if (debugMode && !['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)) {
+      debugMode = false;
+      console.warn('本機除錯模式僅能在 localhost 使用；請勿部署啟用此模式的設定檔。');
+    }
     if (!config) return;
     sessionKey = `atelier-auth:${config.supabaseUrl}`;
     let raw;
@@ -160,6 +171,7 @@ window.AtelierCloud = (() => {
     init, parseConfig, owner, login, logout, read, publish, upload, imageAllowed,
     get configured() { return Boolean(config); },
     get signedIn() { return Boolean(session); },
+    get debugMode() { return debugMode; },
     get project() { return config?.supabaseUrl || 'offline'; }
   };
 })();

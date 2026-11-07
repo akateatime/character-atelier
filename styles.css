@@ -38,6 +38,10 @@
   --radius: 22px;
   --serif: Georgia, "Noto Serif TC", "Noto Serif JP", "Noto Serif KR", "PMingLiU", serif;
 }
+.character-video { display: block; width: min(100%, 800px); aspect-ratio: 16 / 9; height: auto; border: 0; margin: 24px 0; }
+.collection-character-filters { display: flex; flex-wrap: wrap; gap: 12px 20px; border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 20px 0; }
+.collection-character-filters label { display: inline-flex; align-items: center; gap: 6px; }
+.trpg-records { padding-left: 22px; overflow-wrap: anywhere; }
 :root[data-theme="dark"] {
   color-scheme: dark;
   --paper: #18231f;

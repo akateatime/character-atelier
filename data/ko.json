@@ -1,5 +1,9 @@
 {
   "ui": {
+    "Filter by characters (match any; none shows all)": "캐릭터로 필터링 (하나라도 일치; 선택하지 않으면 모두 표시)",
+    "Records": "세션 기록",
+    "No records yet.": "아직 기록이 없습니다.",
+    "Character video": "캐릭터 동영상",
     "Commissions": "커미션 작품",
     "Characters through the eyes and words of other artists.": "다른 창작자의 그림과 글로 만나는 캐릭터의 새로운 모습.",
     "Artist social media ↗": "창작자 SNS ↗",

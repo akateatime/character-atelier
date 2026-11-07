@@ -17,6 +17,7 @@ window.AtelierEditor = (() => {
   let generation = 0;
   let stored = true;
   let hasChanges = false;
+  const openEntries = new WeakSet();
   const clone = value => structuredClone(value);
   const current = () => draft.locales[editLanguage];
   const uid = prefix => `${prefix}-${crypto.randomUUID()}`;
@@ -173,6 +174,36 @@ window.AtelierEditor = (() => {
     parent.append(group);
   }
 
+  function linkedCharacterChecks(parent, item, key, index) {
+    const group = el('fieldset', 'editor-project-checks');
+    group.append(el('legend', '', '關聯角色 / Linked characters'),
+      el('p', 'editor-hint', '同一作品只需建立一次；勾選所有出現或參與的角色。'));
+    current().characters.forEach(character => {
+      const label = el('label');
+      const input = el('input');
+      input.type = 'checkbox';
+      input.checked = item.characterIds.includes(character.id);
+      input.addEventListener('change', () => {
+        const selected = new Set(item.characterIds);
+        if (input.checked) selected.add(character.id);
+        else selected.delete(character.id);
+        if (!selected.size) {
+          input.checked = true;
+          errorMessage(new Error('每項作品至少要關聯一位角色。'));
+          return;
+        }
+        forLocales(data => {
+          const entry = data.characters.find(value => value.id === selectedId)[key][index];
+          entry.characterIds = data.characters.filter(value => selected.has(value.id)).map(value => value.id);
+        });
+        changed();
+      });
+      label.append(input, document.createTextNode(character.name || '（未命名角色）'));
+      group.append(label);
+    });
+    parent.append(group);
+  }
+
   async function confirmAction(title, description) {
     const dialog = el('dialog', 'editor-confirm');
     dialog.append(el('h2', '', title), el('p', '', description));
@@ -198,32 +229,84 @@ window.AtelierEditor = (() => {
     });
   }
 
-  function collection(parent, title, getItems, renderItem, makeItem, onRemove) {
+  function collection(parent, title, getItems, renderItem, makeItem, onRemove, include = () => true, draggable = false) {
     const group = el('section', 'editor-collection');
+    let dragging;
     const header = el('div', 'editor-section-heading');
     header.append(el('h3', '', title), button('＋ 新增 / Add', () => {
       const item = makeItem();
-      forLocales(data => getItems(data).push(clone(item)));
+      forLocales(data => {
+        const entry = clone(item);
+        getItems(data).push(entry);
+        if (data === current()) openEntries.add(entry);
+      });
       changed();
       drawWork();
     }));
     group.append(header);
-    getItems(current()).forEach((item, index) => {
-      const card = el('section', 'editor-entry');
+    const visible = getItems(current()).map((item, index) => ({ item, index })).filter(({ item }) => include(item));
+    visible.forEach(({ item, index }, position) => {
+      const card = el('details', 'editor-entry');
+      card.open = openEntries.has(item);
+      card.addEventListener('toggle', () => {
+        if (card.open) openEntries.add(item);
+        else openEntries.delete(item);
+      });
+      const summary = el('summary', 'editor-entry-summary');
+      const summaryText = el('span');
+      const updateSummary = () => { summaryText.textContent = `${title} ${position + 1}${item.title ? ` · ${item.title}` : ''}`; };
+      updateSummary();
+      summary.append(summaryText);
+      card.append(summary);
+      if (draggable) {
+        const handle = el('span', 'editor-drag-handle', '☰ 拖曳排序');
+        handle.draggable = true;
+        handle.addEventListener('dragstart', event => {
+          if (busy) { event.preventDefault(); return; }
+          dragging = index;
+          event.dataTransfer.effectAllowed = 'move';
+          event.dataTransfer.setData('text/plain', String(index));
+          event.stopPropagation();
+        });
+        handle.addEventListener('dragend', () => { dragging = undefined; });
+        card.addEventListener('dragover', event => {
+          if (dragging === undefined) return;
+          event.preventDefault();
+          event.stopPropagation();
+          event.dataTransfer.dropEffect = 'move';
+        });
+        card.addEventListener('drop', event => {
+          if (dragging === undefined) return;
+          event.preventDefault();
+          event.stopPropagation();
+          if (dragging !== index) {
+            forLocales(data => {
+              const items = getItems(data);
+              items.splice(index, 0, items.splice(dragging, 1)[0]);
+            });
+            changed();
+            drawWork();
+          }
+          dragging = undefined;
+        });
+        summary.append(handle);
+      }
+      card.addEventListener('input', updateSummary);
       const actions = el('div', 'editor-entry-actions');
       const move = direction => {
+        const target = visible[position + direction].index;
         forLocales(data => {
           const items = getItems(data);
-          [items[index], items[index + direction]] = [items[index + direction], items[index]];
+          [items[index], items[target]] = [items[target], items[index]];
         });
         changed();
         drawWork();
       };
       const up = button('↑ 上移', () => move(-1));
-      up.disabled = index === 0;
+      up.disabled = position === 0;
       const down = button('↓ 下移', () => move(1));
-      down.disabled = index === getItems(current()).length - 1;
-      actions.append(el('strong', '', `${title} ${index + 1}`), up, down,
+      down.disabled = position === visible.length - 1;
+      actions.append(up, down,
         button('刪除 / Delete', async () => {
           if (!await confirmAction('刪除此項目？', onRemove ?
             '四種語言中的企劃、角色參與記錄與作品企劃連結都會移除；角色、故事與圖片不會刪除。發布前，公開網站不會改變。' :
@@ -256,31 +339,36 @@ window.AtelierEditor = (() => {
   }
 
   function projectChecks(parent, item, getItem) {
-    const group = el('fieldset', 'editor-project-checks');
-    group.append(el('legend', '', '相關創作企劃 / TRPG'));
-    if (!current().projects.length) group.append(el('p', 'editor-hint', '請先在「創作企劃 / TRPG 管理」建立共用企劃。'));
-    current().projects.forEach(project => {
-      const label = el('label');
-      const input = el('input');
-      input.type = 'checkbox';
-      input.checked = item.projectIds.includes(project.id);
-      input.addEventListener('change', () => {
-        forLocales(data => {
-          const entry = getItem(data);
-          entry.projectIds = input.checked ? [...new Set([...entry.projectIds, project.id])] : entry.projectIds.filter(id => id !== project.id);
+    [['creative', '相關創作企劃'], ['trpg', '相關 TRPG 劇本']].forEach(([kind, title]) => {
+      const group = el('fieldset', 'editor-project-checks');
+      group.append(el('legend', '', title));
+      const projects = current().projects.filter(project => project.kind === kind);
+      if (!projects.length) group.append(el('p', 'editor-hint', '此類別尚無企劃，請先到對應編輯區新增。'));
+      projects.forEach(project => {
+        const label = el('label');
+        const input = el('input');
+        input.type = 'checkbox';
+        input.checked = item.projectIds.includes(project.id);
+        input.addEventListener('change', () => {
+          forLocales(data => {
+            const entry = getItem(data);
+            entry.projectIds = input.checked ? [...new Set([...entry.projectIds, project.id])] : entry.projectIds.filter(id => id !== project.id);
+          });
+          changed();
         });
-        changed();
+        label.append(input, document.createTextNode(project.title || '（未命名企劃）'));
+        group.append(label);
       });
-      label.append(input, document.createTextNode(project.title || '（未命名企劃）'));
-      group.append(label);
+      parent.append(group);
     });
-    parent.append(group);
   }
 
   function drawProjects() {
-    work.append(el('h2', '', '創作企劃 / TRPG 管理'),
+    const kind = section === 'trpg' ? 'trpg' : 'creative';
+    const label = kind === 'trpg' ? 'TRPG 劇本 / TRPG' : '創作企劃 / Creative Projects';
+    work.append(el('h2', '', label),
       el('p', 'editor-hint', '共用企劃只需建立一次。再到各角色勾選參與企劃，並在作品、章節勾選相關企劃；訪客可從企劃頁查看所有參與角色及作品。'));
-    collection(work, '共用企劃', data => data.projects, (card, project, index) => {
+    collection(work, label, data => data.projects, (card, project, index) => {
       choice(card, '企劃類型', project.kind, [['creative', '創作企劃'], ['trpg', 'TRPG 劇本']], value => {
         forLocales(data => {
           data.projects[index].kind = value;
@@ -294,6 +382,7 @@ window.AtelierEditor = (() => {
             }
           });
         });
+        drawWork();
       });
       field(card, '企劃名稱', project.title, value => { project.title = value; }, { required: true });
       field(card, '企劃介紹', project.description, value => { project.description = value; }, { required: true, multiline: true });
@@ -301,7 +390,15 @@ window.AtelierEditor = (() => {
         if (value) data.projects[index].url = value;
         else delete data.projects[index].url;
       }), { type: 'url' });
-    }, () => ({ id: uid('project'), kind: 'creative', title: '', description: '' }), (data, project) => {
+      if (project.kind === 'trpg') {
+        collection(card, '團錄 / Records', data => data.projects[index].records, (recordCard, record, recordIndex) => {
+          field(recordCard, '團錄名稱', record.title, value => { record.title = value; }, { required: true });
+          field(recordCard, '團錄網址（HTTPS）', record.url, value => forLocales(data => {
+            data.projects[index].records[recordIndex].url = value;
+          }), { type: 'url', required: true });
+        }, () => ({ title: '', url: '' }));
+      }
+    }, () => ({ id: uid('project'), kind, title: '', description: '', records: [] }), (data, project) => {
       data.characters.forEach(character => {
         character.artProjects = character.artProjects.filter(entry => entry.id !== project.id);
         character.trpgScenarios = character.trpgScenarios.filter(entry => entry.id !== project.id);
@@ -309,15 +406,18 @@ window.AtelierEditor = (() => {
           entry.projectIds = entry.projectIds.filter(id => id !== project.id);
         });
       });
-    });
+    }, project => project.kind === kind);
   }
 
   function drawCharacter() {
     const heading = el('div', 'editor-section-heading');
-    heading.append(el('h2', '', '角色資料 / Characters'), button('＋ 新增角色', () => {
+    const labels = { characters: '角色資料 / Characters', gallery: '畫廊作品 / Gallery',
+      stories: '故事章節 / Stories', manga: '漫畫 / Manga', commissions: '委託作品 / Commissions' };
+    heading.append(el('h2', '', labels[section]));
+    if (section === 'characters') heading.append(button('＋ 新增角色', () => {
       const id = uid('oc');
       const character = {
-        id, name: '', world: '', summary: '', portrait: 'assets/mira.svg', portraitAlt: '',
+        id, name: '', world: '', summary: '', portrait: 'assets/mira.svg', portraitAlt: '', youtubeUrl: '',
         tags: [], facts: {}, about: [], gallery: [], chapters: [], commissions: [], artProjects: [], trpgScenarios: []
       };
       forLocales(data => data.characters.push(clone(character)));
@@ -335,51 +435,56 @@ window.AtelierEditor = (() => {
     picker.setAttribute('data-character-picker', '');
     const character = selectedCharacter();
     const shared = key => value => forLocales(data => { selectedCharacter(data)[key] = value; });
-    work.append(el('p', 'editor-hint', '文字只修改目前的內容語言；新增、刪除、排序、圖片與日期會同步四語。角色連結由系統自動建立。'));
-    [['name', '角色名稱'], ['world', '所屬世界'], ['summary', '簡介'], ['portraitAlt', '肖像圖片描述（無障礙文字）']].forEach(([key, title]) =>
-      field(work, title, character[key], value => { character[key] = value; }, { multiline: key === 'summary', required: true }));
-    field(work, '標籤（以逗號分隔）', character.tags.join(', '), value => {
-      character.tags = value.split(/[,，]/).map(tag => tag.trim()).filter(Boolean);
-    });
-    imageField(work, '角色肖像', character.portrait, shared('portrait'));
-    const facts = el('section', 'editor-collection');
-    facts.append(el('h3', '', '基本資料 / Profile facts'));
-    Object.entries(character.facts).forEach(([key, value], index) => {
-      const row = el('div', 'editor-fact');
-      let label = key;
-      field(row, `欄位 ${index + 1} 名稱`, key, next => {
-        const entries = Object.entries(character.facts);
-        entries[index] = [next, character.facts[label]];
-        if (entries.some(([entryKey], entryIndex) => entryIndex !== index && entryKey === next)) {
-          throw new Error('欄位名稱重複，請使用不同名稱。');
-        }
-        character.facts = Object.fromEntries(entries);
-        label = next;
-      }, { required: true });
-      field(row, `欄位 ${index + 1} 內容`, value, next => { character.facts[label] = next; }, { required: true });
-      row.append(button('移除欄位', () => { delete character.facts[label]; changed(); drawWork(); }, 'editor-button danger'));
-      facts.append(row);
-    });
-    facts.append(button('＋ 新增資料欄位', () => {
-      let label = '新欄位';
-      while (Object.hasOwn(character.facts, label)) label += '＋';
-      character.facts[label] = '';
-      changed();
-      drawWork();
-    }));
-    work.append(facts);
-    collection(work, '角色介紹段落', data => selectedCharacter(data).about, (card, item) => {
-      field(card, '段落標題', item.title, value => { item.title = value; }, { required: true });
-      field(card, '介紹內容', item.text, value => { item.text = value; }, { multiline: true, required: true });
-    }, () => ({ title: '', text: '' }));
-    collection(work, '畫廊作品', data => selectedCharacter(data).gallery, (card, item, index) => {
+    work.append(el('p', 'editor-hint', '文字只修改目前的內容語言；新增、刪除、排序、圖片與日期會同步四語。畫廊、故事／漫畫及委託作品可在各項目的「關聯角色」中勾選多位角色。'));
+    if (section === 'characters') {
+      [['name', '角色名稱'], ['world', '所屬世界'], ['summary', '簡介'], ['portraitAlt', '肖像圖片描述（無障礙文字）']].forEach(([key, title]) =>
+        field(work, title, character[key], value => { character[key] = value; }, { multiline: key === 'summary', required: true }));
+      field(work, '標籤（以逗號分隔）', character.tags.join(', '), value => {
+        character.tags = value.split(/[,，]/).map(tag => tag.trim()).filter(Boolean);
+      });
+      imageField(work, '角色肖像', character.portrait, shared('portrait'));
+      field(work, 'YouTube 影片網址（可留白）', character.youtubeUrl, shared('youtubeUrl'),
+        { type: 'url', hint: '支援 YouTube 影片網址或 youtu.be 短網址。' });
+      const facts = el('section', 'editor-collection');
+      facts.append(el('h3', '', '基本資料 / Profile facts'));
+      Object.entries(character.facts).forEach(([key, value], index) => {
+        const row = el('div', 'editor-fact');
+        let label = key;
+        field(row, `欄位 ${index + 1} 名稱`, key, next => {
+          const entries = Object.entries(character.facts);
+          entries[index] = [next, character.facts[label]];
+          if (entries.some(([entryKey], entryIndex) => entryIndex !== index && entryKey === next)) {
+            throw new Error('欄位名稱重複，請使用不同名稱。');
+          }
+          character.facts = Object.fromEntries(entries);
+          label = next;
+        }, { required: true });
+        field(row, `欄位 ${index + 1} 內容`, value, next => { character.facts[label] = next; }, { required: true });
+        row.append(button('移除欄位', () => { delete character.facts[label]; changed(); drawWork(); }, 'editor-button danger'));
+        facts.append(row);
+      });
+      facts.append(button('＋ 新增資料欄位', () => {
+        let label = '新欄位';
+        while (Object.hasOwn(character.facts, label)) label += '＋';
+        character.facts[label] = '';
+        changed();
+        drawWork();
+      }));
+      work.append(facts);
+      collection(work, '角色介紹段落', data => selectedCharacter(data).about, (card, item) => {
+        field(card, '段落標題', item.title, value => { item.title = value; }, { required: true });
+        field(card, '介紹內容', item.text, value => { item.text = value; }, { multiline: true, required: true });
+      }, () => ({ title: '', text: '' }));
+    }
+    if (section === 'gallery') collection(work, '畫廊作品', data => selectedCharacter(data).gallery, (card, item, index) => {
       [['title', '作品名稱'], ['alt', '圖片描述'], ['credit', '繪者 / 來源']].forEach(([key, label]) =>
         field(card, label, item[key], value => { item[key] = value; }, { required: true }));
       field(card, '日期', item.date, value => forLocales(data => { selectedCharacter(data).gallery[index].date = value; }), { type: 'date', required: true });
       imageField(card, '作品圖片', item.src, value => forLocales(data => { selectedCharacter(data).gallery[index].src = value; }));
       projectChecks(card, item, data => selectedCharacter(data).gallery[index]);
-    }, () => ({ title: '', alt: '', credit: '', date: today(), src: character.portrait, projectIds: [] }));
-    collection(work, '委託作品 / Commissions', data => selectedCharacter(data).commissions, (card, item, index) => {
+      linkedCharacterChecks(card, item, 'gallery', index);
+    }, () => ({ id: uid('artwork'), characterIds: [selectedId], title: '', alt: '', credit: '', date: today(), src: character.portrait, projectIds: [] }));
+    if (section === 'commissions') collection(work, '委託作品 / Commissions', data => selectedCharacter(data).commissions, (card, item, index) => {
       const sharedCommission = key => value => forLocales(data => { selectedCharacter(data).commissions[index][key] = value; });
       card.append(el('p', 'editor-hint', '可存放其他創作者的圖片、文章或圖文作品；至少填圖片或正文。姓名與社群網址可各自留白，並同步四語。請先取得公開展示授權。'));
       field(card, '委託作品名稱', item.title, value => { item.title = value; }, { required: true });
@@ -389,12 +494,14 @@ window.AtelierEditor = (() => {
       imageField(card, '委託圖片（可留白）', item.src, sharedCommission('src'));
       field(card, '委託圖片描述（有圖片時必填）', item.alt, value => { item.alt = value; });
       field(card, '委託文章／正文（可留白）', item.text, value => { item.text = value; }, { multiline: true });
-    }, () => ({ id: uid('commission'), title: '', date: today(), artistName: '', artistUrl: '', src: '', alt: '', text: '' }));
-    collection(work, '故事章節', data => selectedCharacter(data).chapters, (card, item, index) => {
+      linkedCharacterChecks(card, item, 'commissions', index);
+    }, () => ({ id: uid('commission'), characterIds: [selectedId], title: '', date: today(), artistName: '', artistUrl: '', src: '', alt: '', text: '' }));
+    if (section === 'stories' || section === 'manga') collection(work, section === 'manga' ? '漫畫' : '故事章節', data => selectedCharacter(data).chapters, (card, item, index) => {
       field(card, '章節標題', item.title, value => { item.title = value; }, { required: true });
       field(card, '作者 / 來源', item.credit, value => { item.credit = value; }, { required: true });
       field(card, '日期', item.date, value => forLocales(data => { selectedCharacter(data).chapters[index].date = value; }), { type: 'date', required: true });
       projectChecks(card, item, data => selectedCharacter(data).chapters[index]);
+      linkedCharacterChecks(card, item, 'chapters', index);
       choice(card, '閱讀格式', item.format, [['prose', '文字故事'], ['illustrated', '圖文故事'], ['manga', '漫畫（依頁序向下閱讀）']], value => {
         if (value === item.format) return;
         const chapters = codes.map(code => selectedCharacter(draft.locales[code]).chapters[index]);
@@ -423,6 +530,40 @@ window.AtelierEditor = (() => {
         }, { multiline: true, required: true });
       } else {
         const getBlocks = data => selectedCharacter(data).chapters[index].blocks;
+        if (item.format === 'manga') {
+          const uploadLabel = el('label', 'editor-field');
+          uploadLabel.append(el('span', '', '批次上傳漫畫頁面 / Upload manga pages'));
+          const files = el('input');
+          files.type = 'file';
+          files.multiple = true;
+          files.accept = 'image/jpeg,image/png,image/webp,image/gif,image/avif';
+          files.disabled = api.cloud.debugMode;
+          files.addEventListener('change', async () => {
+            const selected = [...files.files];
+            if (!selected.length) return;
+            let completed = 0;
+            try {
+              await operation(async () => {
+                for (const file of selected) {
+                  message(`圖片上傳中 ${completed + 1}/${selected.length}…`);
+                  const src = await api.cloud.upload(file);
+                  forLocales(data => getBlocks(data).push({ type: 'image', src, alt: '', caption: '' }));
+                  completed++;
+                  changed();
+                }
+              });
+              drawWork();
+              if (stored) message(`已上傳 ${completed} 頁。請填寫每頁圖片描述，再發布網站。`);
+            } catch (error) {
+              drawWork();
+              errorMessage(new Error(`已上傳 ${completed}/${selected.length} 頁，剩餘檔案未上傳：${error.message}${stored ? '' : ' 草稿無法儲存，請立即下載備份。'}`));
+            } finally { files.value = ''; }
+          });
+          uploadLabel.append(files, el('small', '', api.cloud.debugMode ?
+            '本機除錯模式不支援雲端上傳，請連接雲端後使用。' :
+            '可一次選取多張；每張最多 5 MiB。上傳後請填寫圖片描述。'));
+          card.append(uploadLabel);
+        }
         if (item.format === 'illustrated') card.append(button('＋ 新增文字區塊', () => {
           forLocales(data => getBlocks(data).push({ type: 'text', text: '' }));
           changed();
@@ -435,47 +576,69 @@ window.AtelierEditor = (() => {
             field(blockCard, '頁面圖片描述', block.alt, value => { block.alt = value; }, { required: true });
             field(blockCard, '圖片說明（可留白）', block.caption, value => { block.caption = value; }, { multiline: true });
           }
-        }, () => ({ type: 'image', src: character.portrait, alt: '', caption: '' }));
+        }, () => ({ type: 'image', src: character.portrait, alt: '', caption: '' }),
+        undefined, () => true, item.format === 'manga');
       }
-    }, () => ({ id: uid('chapter'), title: '', credit: '', date: today(), paragraphs: [], format: 'prose', blocks: [], projectIds: [] }));
-    [['artProjects', '創作企劃'], ['trpgScenarios', 'TRPG 劇本']].forEach(([key, title]) => {
-      const group = el('section', 'editor-collection');
-      group.append(el('h3', '', title));
-      current().projects.filter(project => project.kind === (key === 'artProjects' ? 'creative' : 'trpg')).forEach(project => {
-        const label = el('label', 'editor-membership');
-        const input = el('input');
-        input.type = 'checkbox';
-        input.checked = character[key].some(entry => entry.id === project.id);
-        input.addEventListener('change', () => {
-          forLocales(data => {
-            const member = selectedCharacter(data);
-            const local = data.projects.find(entry => entry.id === project.id);
-            if (input.checked) member[key].push({ id: project.id, title: local.title, description: '' });
-            else member[key] = member[key].filter(entry => entry.id !== project.id);
+    }, () => ({ id: uid('chapter'), characterIds: [selectedId], title: '', credit: '', date: today(), paragraphs: [], format: section === 'manga' ? 'manga' : 'prose', blocks: [], projectIds: [] }),
+    undefined, chapter => section === 'manga' ? chapter.format === 'manga' : chapter.format !== 'manga');
+    if (section === 'characters') {
+      [['artProjects', '創作企劃'], ['trpgScenarios', 'TRPG 劇本']].forEach(([key, title]) => {
+        const group = el('section', 'editor-collection');
+        group.append(el('h3', '', title));
+        current().projects.filter(project => project.kind === (key === 'artProjects' ? 'creative' : 'trpg')).forEach(project => {
+          const label = el('label', 'editor-membership');
+          const input = el('input');
+          input.type = 'checkbox';
+          input.checked = character[key].some(entry => entry.id === project.id);
+          input.addEventListener('change', () => {
+            forLocales(data => {
+              const member = selectedCharacter(data);
+              const local = data.projects.find(entry => entry.id === project.id);
+              if (input.checked) member[key].push({ id: project.id, title: local.title, description: '' });
+              else member[key] = member[key].filter(entry => entry.id !== project.id);
+            });
+            changed();
+            drawWork();
           });
-          changed();
-          drawWork();
+          label.append(input, document.createTextNode(project.title || '（未命名企劃）'));
+          group.append(label);
+          const entry = character[key].find(entry => entry.id === project.id);
+          if (entry) field(group, `${project.title}：參與介紹`, entry.description, value => { entry.description = value; }, { multiline: true, required: true });
         });
-        label.append(input, document.createTextNode(project.title || '（未命名企劃）'));
-        group.append(label);
-        const entry = character[key].find(entry => entry.id === project.id);
-        if (entry) field(group, `${project.title}：參與介紹`, entry.description, value => { entry.description = value; }, { multiline: true, required: true });
+        group.append(el('p', 'editor-hint', '沒有參加可不勾選。請在「創作企劃」或「TRPG 劇本」區域新增企劃。'));
+        work.append(group);
       });
-      group.append(el('p', 'editor-hint', '沒有參加可不勾選。新增企劃請到「創作企劃 / TRPG 管理」。'));
-      work.append(group);
-    });
-    const danger = el('div', 'editor-danger-zone');
-    danger.append(button('刪除此角色及相關關係', async () => {
-      if (!await confirmAction('確定刪除整個角色？', '四語角色資料、章節、畫廊項目、委託作品與所有相關關係都會移除。雲端圖片不會刪除。請先下載備份。')) return;
-      forLocales(data => {
-        data.characters = data.characters.filter(item => item.id !== selectedId);
-        data.relationships = data.relationships.filter(item => item.from !== selectedId && item.to !== selectedId);
-      });
-      selectedId = undefined;
-      changed();
-      drawWork();
-    }, 'editor-button danger'));
-    work.append(danger);
+      const danger = el('div', 'editor-danger-zone');
+      danger.append(button('刪除此角色及相關關係', async () => {
+        if (!await confirmAction('確定刪除整個角色？', '作品若還關聯其他角色，會保留並移到其他角色名下；只關聯此角色的章節、畫廊項目與委託作品會一起移除。相關關係也會刪除，雲端圖片不會刪除。請先下載備份。')) return;
+        forLocales(data => {
+          const removed = data.characters.find(item => item.id === selectedId);
+          const remaining = data.characters.filter(item => item.id !== selectedId);
+          ['gallery', 'chapters', 'commissions'].forEach(key => {
+            removed[key].forEach(entry => {
+              const replacementId = entry.characterIds.find(id => id !== selectedId && remaining.some(item => item.id === id));
+              if (replacementId) {
+                const replacement = remaining.find(item => item.id === replacementId);
+                replacement[key].push({ ...entry, characterIds: entry.characterIds.filter(id => id !== selectedId) });
+              }
+            });
+          });
+          remaining.forEach(character => {
+            ['gallery', 'chapters', 'commissions'].forEach(key => {
+              character[key].forEach(entry => {
+                entry.characterIds = entry.characterIds.filter(id => id !== selectedId);
+              });
+            });
+          });
+          data.characters = data.characters.filter(item => item.id !== selectedId);
+          data.relationships = data.relationships.filter(item => item.from !== selectedId && item.to !== selectedId);
+        });
+        selectedId = undefined;
+        changed();
+        drawWork();
+      }, 'editor-button danger'));
+      work.append(danger);
+    }
   }
 
   function drawRelationships() {
@@ -499,7 +662,7 @@ window.AtelierEditor = (() => {
   function drawWork() {
     work.replaceChildren();
     if (section === 'site') drawSite();
-    else if (section === 'projects') drawProjects();
+    else if (section === 'projects' || section === 'trpg') drawProjects();
     else if (section === 'relationships') drawRelationships();
     else drawCharacter();
   }
@@ -519,7 +682,10 @@ window.AtelierEditor = (() => {
     codes.filter(code => code !== editLanguage).forEach(code => {
       const target = draft.locales[code];
       fillText(target.site, source.site, ['eyebrow', 'title', 'description', 'heroAlt', 'noteTitle', 'note']);
-      target.projects.forEach((project, i) => fillText(project, source.projects[i], ['title', 'description']));
+      target.projects.forEach((project, i) => {
+        fillText(project, source.projects[i], ['title', 'description']);
+        project.records.forEach((record, j) => fillText(record, source.projects[i].records[j], ['title']));
+      });
       target.characters.forEach((character, index) => {
         const original = source.characters[index];
         fillText(character, original, ['name', 'world', 'summary', 'portraitAlt']);
@@ -546,10 +712,14 @@ window.AtelierEditor = (() => {
     const heading = el('header', 'page-heading');
     heading.append(el('span', 'eyebrow', 'OWNER STUDIO'), el('h1', '', '創作管理室'),
       el('p', '', '不用寫程式：修改表單 → 儲存草稿 → 發布網站。介面以繁體中文為主，內容可編輯四種語言。'));
+    if (api.cloud.debugMode) {
+      heading.append(el('p', 'editor-draft-banner', '本機除錯模式：無須登入。修改只儲存在此瀏覽器；套用預覽不會發布至雲端。'));
+    }
     const bar = el('div', 'editor-publish-bar');
     bar.append(button('儲存草稿', () => saveDraft()),
-      button('發布網站 / Publish', () => publish(), 'editor-button primary'),
-      button('下載備份', () => download(`atelier-backup-${today()}.json`, draft)),
+      button(api.cloud.debugMode ? '套用本機預覽' : '發布網站 / Publish', () => publish(), 'editor-button primary'),
+      button('下載備份', () => download(`atelier-backup-${today()}.json`, draft)));
+    if (!api.cloud.debugMode) bar.append(
       button('載入雲端最新版本', () => reloadPublished()),
       button('登出 / Sign out', async () => {
         if (hasChanges) {
@@ -573,7 +743,7 @@ window.AtelierEditor = (() => {
       editLanguage = value;
       drawWork();
     }, false);
-    choice(tools, '編輯區域 / Section', section, [['characters', '角色、畫廊、故事、漫畫、委託作品 / Characters'], ['projects', '創作企劃 / TRPG 管理'], ['relationships', '角色關係 / Relationships'], ['site', '首頁 / Homepage']], value => {
+    choice(tools, '編輯區域 / Section', section, [['characters', '角色 / Characters'], ['gallery', '畫廊 / Gallery'], ['stories', '故事 / Stories'], ['manga', '漫畫 / Manga'], ['commissions', '委託作品 / Commissions'], ['projects', '創作企劃 / Creative Projects'], ['trpg', 'TRPG 劇本 / TRPG'], ['relationships', '角色關係 / Relationships'], ['site', '首頁 / Homepage']], value => {
       section = value;
       drawWork();
     }, false);
@@ -608,7 +778,9 @@ window.AtelierEditor = (() => {
     work = el('div', 'editor-work');
     api.main.append(heading, bar, status, tools, hint, importLabel, work);
     drawWork();
-    message(`已登入。雲端基準版本：${baseVersion}。所有修改先保留在草稿，按發布才會公開。`);
+    message(api.cloud.debugMode
+      ? '本機除錯工作室已開啟。修改會儲存在此瀏覽器，可套用預覽或下載備份。'
+      : `已登入。雲端基準版本：${baseVersion}。所有修改先保留在草稿，按發布才會公開。`);
   }
 
   async function publish() {
@@ -616,11 +788,20 @@ window.AtelierEditor = (() => {
       api.validate(draft);
       const invalid = work.querySelector(':invalid');
       if (invalid) {
+        for (let parent = invalid.parentElement; parent && parent !== work; parent = parent.parentElement) {
+          if (parent.tagName === 'DETAILS') parent.open = true;
+        }
         invalid.reportValidity();
         throw new Error('請完成目前表單中的必填欄位。');
       }
-      message('發布中，請勿關閉頁面…');
       const snapshot = clone(draft);
+      if (api.cloud.debugMode) {
+        saveDraft();
+        api.apply(snapshot, baseVersion);
+        message('本機預覽已更新；內容只存在此瀏覽器，並未發布至雲端。');
+        return;
+      }
+      message('發布中，請勿關閉頁面…');
       const version = await api.cloud.publish(snapshot, baseVersion);
       api.apply(snapshot, version);
       baseVersion = version;
@@ -703,7 +884,9 @@ window.AtelierEditor = (() => {
   }
 
   function openDraft(user) {
-    if (ownerId && ownerId !== user.id) draft = undefined;
+    if (ownerId && ownerId !== user.id) {
+      draft = undefined;
+    }
     ownerId = user.id;
     draftKey = `atelier-draft:${api.cloud.project}:${ownerId}`;
     if (!draft) initializeDraft(api.getPayload(), api.getVersion());
@@ -750,6 +933,7 @@ window.AtelierEditor = (() => {
     api.main.replaceChildren(el('h1', '', '創作管理室 / Owner Studio'));
     status = el('p', 'editor-status');
     api.main.append(status);
+    if (api.cloud.debugMode) { openDraft({ id: 'local-debug' }); return; }
     if (!api.cloud.configured) { setupScreen(); return; }
     if (!api.cloud.signedIn) { loginScreen(); return; }
     try {

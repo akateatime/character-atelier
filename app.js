@@ -7,6 +7,7 @@ let language = 'zh-Hant';
 let catalogues;
 let translationsReady = false;
 let cloudVersion = 0;
+const collectionFilters = { gallery: new Set(), manga: new Set(), commissions: new Set() };
 const cloud = window.AtelierCloud;
 const languageControl = document.querySelector('#language');
 const supportedLanguages = ['en', 'zh-Hant', 'ja', 'ko'];
@@ -98,6 +99,49 @@ function characterUrl(character, tab = 'about') {
   return `#/character/${encodeURIComponent(character.id)}/${tab}`;
 }
 
+function youtubeVideoId(value) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || url.username || url.password || url.port) return null;
+    let id;
+    if (url.hostname === 'youtu.be') id = url.pathname.slice(1);
+    else if (['www.youtube.com', 'youtube.com', 'm.youtube.com'].includes(url.hostname)) {
+      if (url.pathname === '/watch') id = url.searchParams.get('v');
+      else if (/^\/(?:embed|shorts)\/[^/]+$/.test(url.pathname)) id = url.pathname.split('/')[2];
+    }
+    return typeof id === 'string' && /^[A-Za-z0-9_-]{11}$/.test(id) ? id : null;
+  } catch (error) {
+    if (error instanceof TypeError) return null;
+    throw error;
+  }
+}
+
+function linkedCharacters(item) {
+  return content.characters.filter(character => item.characterIds.includes(character.id));
+}
+
+function linkedCharacterNames(item) {
+  return linkedCharacters(item).map(character => character.name).join(' · ');
+}
+
+function linkedCharacterNav(item, tab) {
+  const nav = node('nav', 'linked-character-links');
+  nav.setAttribute('aria-label', t('Participating characters'));
+  linkedCharacters(item).forEach(character => {
+    const itemLink = link('', characterUrl(character, tab), 'text-link linked-character');
+    itemLink.append(image(character.portrait, '', 'linked-character-avatar'), node('span', '', character.name));
+    nav.append(itemLink);
+  });
+  return nav;
+}
+
+function linkedCharacterAvatars(item) {
+  const avatars = node('span', 'linked-character-avatars');
+  avatars.setAttribute('aria-hidden', 'true');
+  linkedCharacters(item).forEach(character => avatars.append(image(character.portrait, '', 'linked-character-avatar')));
+  return avatars;
+}
+
 function chapterUrl(character, chapter) {
   return `#/story/${encodeURIComponent(character.id)}/${encodeURIComponent(chapter.id)}`;
 }
@@ -137,8 +181,10 @@ function section(title, subtitle, destination, children) {
 }
 
 function storyList(characters, accept = () => true) {
-  return storyItems(characters.flatMap(character => character.chapters.map((chapter, index) => ({ character, chapter, index })))
-    .filter(({ chapter }) => accept(chapter)));
+  const characterIds = new Set(characters.map(character => character.id));
+  return storyItems(content.characters.flatMap(character => character.chapters
+    .map((chapter, index) => ({ character, chapter, index }))
+    .filter(({ chapter }) => chapter.characterIds.some(id => characterIds.has(id)) && accept(chapter))));
 }
 
 function storyItems(items, covers = false) {
@@ -150,8 +196,9 @@ function storyItems(items, covers = false) {
       row.append(image(cover?.src || character.portrait, '', 'story-cover'));
     }
     const text = node('div');
-    text.append(node('h3', '', chapter.title), node('p', '', `${character.name} · ${t('Chapter {number}', { number: index + 1 })} · ${chapter.date}`));
+    text.append(node('h3', '', chapter.title), node('p', '', `${linkedCharacterNames(chapter)} · ${t('Chapter {number}', { number: index + 1 })} · ${chapter.date}`));
     if (chapter.format !== 'prose') text.append(node('span', 'tag', t(chapter.format === 'manga' ? 'Manga' : 'Illustrated story')));
+    text.append(linkedCharacterAvatars(chapter));
     row.append(node('span', 'chapter-number', String(index + 1).padStart(2, '0')), text, node('span', 'arrow', '→'));
     list.append(row);
   });
@@ -161,10 +208,13 @@ function storyItems(items, covers = false) {
 
 function collectionPage(kind, requestedPage) {
   const pageSize = 10;
-  const items = kind === 'commissions' ? content.characters.flatMap(character => character.commissions.map(commission => ({ character, commission }))) :
+  const allItems = kind === 'commissions' ? content.characters.flatMap(character => character.commissions.map(commission => ({ character, commission }))) :
     kind === 'gallery' ? allArtwork() :
     content.characters.flatMap(character => character.chapters.map((chapter, index) => ({ character, chapter, index })))
       .filter(({ chapter }) => kind !== 'manga' || chapter.format === 'manga');
+  const selected = collectionFilters[kind];
+  const items = selected && selected.size ? allItems.filter(entry =>
+    (entry.art || entry.chapter || entry.commission).characterIds.some(id => selected.has(id))) : allItems;
   const pages = Math.max(1, Math.ceil(items.length / pageSize));
   const page = Math.min(requestedPage, pages);
   const pageUrl = number => `#/${kind}${number === 1 ? '' : `/page/${number}`}`;
@@ -176,6 +226,30 @@ function collectionPage(kind, requestedPage) {
   main.append(heading(t(kind === 'gallery' ? 'The art wall' : 'The storybook'), t(titles[kind]),
     t(kind === 'commissions' ? 'Characters through the eyes and words of other artists.' :
       kind === 'gallery' ? 'Portraits, places, and little glimpses into their lives.' : 'Choose a chapter and wander into another world.')));
+  if (selected) {
+    const filters = node('fieldset', 'collection-character-filters');
+    filters.append(node('legend', '', t('Filter by characters (match any; none shows all)')));
+    content.characters.forEach(character => {
+      const label = node('label');
+      const checkbox = node('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = character.id;
+      checkbox.checked = selected.has(character.id);
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) selected.add(character.id);
+        else selected.delete(character.id);
+        if (location.hash !== `#/${kind}`) location.hash = `#/${kind}`;
+        else {
+          main.replaceChildren();
+          collectionPage(kind, 1);
+          [...main.querySelectorAll('.collection-character-filters input')].find(input => input.value === character.id)?.focus();
+        }
+      });
+      label.append(checkbox, document.createTextNode(character.name));
+      filters.append(label);
+    });
+    main.append(filters);
+  }
   const summary = node('p', 'collection-summary', t('Showing {start}–{end} of {total} works', {
     start: items.length ? start + 1 : 0, end: start + visible.length, total: items.length
   }));
@@ -216,8 +290,8 @@ function commissionList(items) {
     else work.append(node('span', 'commission-text-mark', t('Written work')));
     work.append(node('h2', '', commission.title));
     if (commission.text) work.append(node('p', 'commission-excerpt', commission.text.slice(0, 180)));
-    card.append(work, commissionCredit(commission),
-      link(character.name, characterUrl(character, 'commissions'), 'text-link'), node('span', 'commission-date', commission.date));
+    card.append(work, commissionCredit(commission), linkedCharacterNav(commission, 'commissions'),
+      node('span', 'commission-date', commission.date));
     grid.append(card);
   });
   if (!items.length) grid.append(node('p', 'empty', t('No commissions yet.')));
@@ -227,7 +301,8 @@ function commissionList(items) {
 function commissionPage(character, commission) {
   main.append(breadcrumbs([[t('Commissions'), '#/commissions'], [character.name, characterUrl(character, 'commissions')], [commission.title]]));
   const article = node('article', 'reader commission-reader');
-  article.append(node('span', 'eyebrow', commission.date), node('h1', '', commission.title), commissionCredit(commission));
+  article.append(node('span', 'eyebrow', commission.date), node('h1', '', commission.title),
+    linkedCharacterNav(commission, 'commissions'), commissionCredit(commission));
   if (commission.src) {
     const figure = node('figure', 'story-illustration');
     figure.append(image(commission.src, commission.alt));
@@ -324,7 +399,8 @@ function showArtwork(art, character, chapter) {
     }
   });
   top.append(title, close);
-  dialog.append(top, image(art.src, art.alt, '', false), node('p', '', `${character.name} · ${t('Art by {credit}', { credit: art.credit })} · ${art.date}`));
+  dialog.append(top, image(art.src, art.alt, '', false), linkedCharacterNav(art, 'gallery'),
+    node('p', '', `${t('Art by {credit}', { credit: art.credit })} · ${art.date}`));
   dialog.append(projectLinks(art));
   if (chapter) dialog.append(link(chapter.title, chapterUrl(character, chapter), 'text-link'));
   dialog.addEventListener('close', () => { dialog.remove(); activeDialog = undefined; }, { once: true });
@@ -341,10 +417,10 @@ function gallery(items) {
     button.type = 'button';
     button.setAttribute('aria-label', t('View {title} by {credit}', { title: art.title, credit: art.credit }));
     const caption = node('span', 'gallery-caption');
-    caption.append(node('strong', '', art.title), node('span', '', `${character.name} · ${art.credit}`));
+    caption.append(node('strong', '', art.title), node('span', '', `${linkedCharacterNames(art)} · ${art.credit}`));
     button.append(image(art.src, art.alt), caption);
     button.addEventListener('click', () => showArtwork(art, character, chapter));
-    figure.append(button, projectLinks(art));
+    figure.append(button, linkedCharacterNav(art, 'gallery'), projectLinks(art));
     grid.append(figure);
   });
   if (!items.length) grid.append(node('p', 'empty', t('No artwork yet. This gallery is waiting for its first piece.')));
@@ -697,13 +773,27 @@ function projectPage(project) {
       if (block.type === 'image') pictures.push({
         character, chapter,
         art: { src: block.src, alt: block.alt, title: `${chapter.title} · ${index + 1}`,
-          credit: chapter.credit, date: chapter.date, projectIds: chapter.projectIds }
+          credit: chapter.credit, date: chapter.date, projectIds: chapter.projectIds, characterIds: chapter.characterIds }
       });
     });
   }));
-  main.append(node('h2', '', t('Participating characters')), grid,
-    node('h2', '', t('Stories')), storyList(content.characters, chapter => chapter.projectIds.includes(project.id)),
-    node('h2', '', t('Gallery')), gallery(pictures));
+  main.append(node('h2', '', t('Participating characters')), grid);
+  if (project.kind === 'trpg') {
+    const records = node('ul', 'trpg-records');
+    project.records.forEach(record => {
+      const row = node('li');
+      const external = link(record.title, record.url, 'text-link');
+      external.target = '_blank';
+      external.rel = 'noopener noreferrer';
+      row.append(external);
+      records.append(row);
+    });
+    main.append(node('h2', '', t('Records')), records);
+    if (!project.records.length) records.append(node('li', '', t('No records yet.')));
+  } else {
+    main.append(node('h2', '', t('Stories')), storyList(content.characters, chapter => chapter.projectIds.includes(project.id)));
+  }
+  main.append(node('h2', '', t('Gallery')), gallery(pictures));
 }
 
 function profile(character, tab) {
@@ -731,11 +821,25 @@ function profile(character, tab) {
   if (tab === 'about') {
     const prose = node('div', 'prose');
     character.about.forEach(part => prose.append(node('h2', '', part.title), node('p', '', part.text)));
-    body.append(prose, participation(character));
+    body.append(prose);
+    if (character.youtubeUrl) {
+      const frame = node('iframe', 'character-video');
+      frame.src = `https://www.youtube-nocookie.com/embed/${youtubeVideoId(character.youtubeUrl)}`;
+      frame.title = t('Character video');
+      frame.loading = 'lazy';
+      frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      frame.allowFullscreen = true;
+      frame.referrerPolicy = 'strict-origin-when-cross-origin';
+      body.append(frame);
+    }
+    body.append(participation(character));
   } else if (tab === 'gallery') {
-    body.append(gallery(character.gallery.map(art => ({ character, art }))));
+    body.append(gallery(allArtwork().filter(({ art }) => art.characterIds.includes(character.id))));
   } else if (tab === 'commissions') {
-    body.append(node('h2', '', t('Commissions')), commissionList(character.commissions.map(commission => ({ character, commission }))));
+    const commissions = content.characters.flatMap(owner => owner.commissions
+      .filter(commission => commission.characterIds.includes(character.id))
+      .map(commission => ({ character: owner, commission })));
+    body.append(node('h2', '', t('Commissions')), commissionList(commissions));
   } else if (tab === 'manga') {
     body.append(node('h2', '', t('Manga')), storyList([character], chapter => chapter.format === 'manga'));
   } else {
@@ -755,8 +859,9 @@ function reader(character, chapter) {
   const article = node('article', 'reader');
   const index = character.chapters.indexOf(chapter);
   const header = node('header', 'reader-header');
-  header.append(node('span', 'eyebrow', `${character.name} · ${t('Chapter {number}', { number: index + 1 })}`),
+  header.append(node('span', 'eyebrow', `${linkedCharacterNames(chapter)} · ${t('Chapter {number}', { number: index + 1 })}`),
     node('h1', '', chapter.title), node('span', 'tiny', `${chapter.date} · ${chapter.credit}`));
+  header.append(linkedCharacterNav(chapter, chapter.format === 'manga' ? 'manga' : 'stories'));
   const prose = node('div', 'prose');
   chapter.paragraphs.forEach(paragraph => prose.append(node('p', '', paragraph)));
   chapter.blocks.forEach(block => {
@@ -878,13 +983,25 @@ function upgradeContent(data) {
     });
   }
   data.characters.forEach(character => {
+    if (character.youtubeUrl === undefined) character.youtubeUrl = '';
     if (character.commissions === undefined) character.commissions = [];
-    (character.gallery || []).forEach(art => { if (art.projectIds === undefined) art.projectIds = []; });
+    (character.gallery || []).forEach((art, index) => {
+      if (art.id === undefined) art.id = `art-${character.id}-${index + 1}`;
+      if (art.characterIds === undefined) art.characterIds = [character.id];
+      if (art.projectIds === undefined) art.projectIds = [];
+    });
+    character.commissions.forEach(commission => {
+      if (commission.characterIds === undefined) commission.characterIds = [character.id];
+    });
     (character.chapters || []).forEach(chapter => {
+      if (chapter.characterIds === undefined) chapter.characterIds = [character.id];
       if (chapter.projectIds === undefined) chapter.projectIds = [];
       if (chapter.format === undefined) chapter.format = 'prose';
       if (chapter.blocks === undefined) chapter.blocks = [];
     });
+  });
+  if (Array.isArray(data.projects)) data.projects.forEach(project => {
+    if (project && project.records === undefined) project.records = [];
   });
   return data;
 }
@@ -908,6 +1025,8 @@ function validateContent(data, allowIncomplete = false) {
     require(project && id(project.id) && !projectIds.has(project.id) && ['creative', 'trpg'].includes(project.kind) &&
       text(project.title) && text(project.description) &&
       (project.url === undefined || (allowIncomplete ? typeof project.url === 'string' : validUrl(project.url))), 'invalid or duplicate project.');
+    require(Array.isArray(project.records) && project.records.every(record => record && text(record.title) &&
+      typeof record.url === 'string' && (allowIncomplete || validUrl(record.url))), 'invalid TRPG record.');
     projectIds.add(project.id);
   });
   const references = values => Array.isArray(values) && values.every(value => projectIds.has(value)) && new Set(values).size === values.length;
@@ -922,6 +1041,8 @@ function validateContent(data, allowIncomplete = false) {
     ids.add(character.id);
     require(['name', 'world', 'summary', 'portraitAlt'].every(key => text(character[key])) &&
       asset(character.portrait) && texts(character.tags), `${label} has invalid profile fields.`);
+    require(typeof character.youtubeUrl === 'string' && (!character.youtubeUrl || allowIncomplete || youtubeVideoId(character.youtubeUrl)),
+      `${label} YouTube URL must link to a valid HTTPS YouTube video.`);
     require(character.facts && typeof character.facts === 'object' && !Array.isArray(character.facts) &&
       Object.entries(character.facts).every(([key, value]) => text(key) && text(value)), `${label} facts must be text key/value pairs.`);
     require(Array.isArray(character.about) && character.about.every(part => part && text(part.title) && text(part.text)),
@@ -949,8 +1070,13 @@ function validateContent(data, allowIncomplete = false) {
         require(entry.url === undefined || typeof entry.url === 'string', `${label} ${key} URL must be text.`);
       });
     });
-    require(Array.isArray(character.gallery) && character.gallery.every(art => art &&
-      ['title', 'alt', 'credit', 'date'].every(key => text(art[key])) && asset(art.src) && references(art.projectIds)), `${label} gallery contains invalid artwork.`);
+    const artworkIds = new Set();
+    require(Array.isArray(character.gallery) && character.gallery.every(art => {
+      const valid = art && id(art.id) && !artworkIds.has(art.id) &&
+        ['title', 'alt', 'credit', 'date'].every(key => text(art[key])) && asset(art.src) && references(art.projectIds);
+      if (valid) artworkIds.add(art.id);
+      return valid;
+    }), `${label} gallery contains invalid artwork.`);
     require(Array.isArray(character.commissions), `${label} commissions must be an array.`);
     const commissionIds = new Set();
     character.commissions.forEach(commission => {
@@ -977,6 +1103,14 @@ function validateContent(data, allowIncomplete = false) {
           chapter.blocks.every(block => block.type === 'image'))), `${label} story format requires text, illustrated blocks, or image-only manga pages.`);
       chapterIds.add(chapter.id);
     });
+  });
+  const linkedCharactersValid = values => Array.isArray(values) && values.length > 0 &&
+    values.every(value => ids.has(value)) && new Set(values).size === values.length;
+  data.characters.forEach(character => {
+    ['gallery', 'chapters', 'commissions'].forEach(key => character[key].forEach(entry => {
+      require(linkedCharactersValid(entry.characterIds),
+        `${character.id} ${key} items must link to one or more distinct existing characters.`);
+    }));
   });
   require(Array.isArray(data.relationships), 'relationships must be an array (use [] if none).');
   const relationshipIds = new Set();
@@ -1047,7 +1181,10 @@ function localizedContent(base, pack) {
   translated.projects = base.projects.map(project => {
     const key = project.kind === 'creative' ? 'artProjects' : 'trpgScenarios';
     const local = pack.projects?.[project.id] || translated.characters.flatMap(character => character[key]).find(entry => entry.id === project.id);
-    return { ...project, ...fields(local, ['title', 'description']) };
+    return { ...project, ...fields(local, ['title', 'description']),
+      records: project.records.map((record, index) => ({
+        ...record, title: pack.projects?.[project.id]?.records?.[index]?.title || record.title
+      })) };
   });
   return validateContent(translated);
 }
@@ -1062,13 +1199,13 @@ function validateArchive(payload, { allowIncomplete = false } = {}) {
   if (!payload || payload.schemaVersion !== 1 || !payload.locales) throw new Error('備份格式不正確。Invalid archive.');
   const structure = data => JSON.stringify({
     heroImage: data.site.heroImage,
-    projects: data.projects.map(project => [project.id, project.kind, project.url]),
+    projects: data.projects.map(project => [project.id, project.kind, project.url, project.records.map(record => record.url)]),
     characters: data.characters.map(character => ({
-      id: character.id, portrait: character.portrait,
+      id: character.id, portrait: character.portrait, youtubeUrl: character.youtubeUrl,
       about: character.about.length,
-      gallery: character.gallery.map(art => [art.src, art.date, art.projectIds]),
-      commissions: character.commissions.map(commission => [commission.id, commission.src, commission.date, commission.artistName, commission.artistUrl]),
-      chapters: character.chapters.map(chapter => [chapter.id, chapter.date, chapter.projectIds, chapter.format,
+      gallery: character.gallery.map(art => [art.id, art.characterIds, art.src, art.date, art.projectIds]),
+      commissions: character.commissions.map(commission => [commission.id, commission.characterIds, commission.src, commission.date, commission.artistName, commission.artistUrl]),
+      chapters: character.chapters.map(chapter => [chapter.id, chapter.characterIds, chapter.date, chapter.projectIds, chapter.format,
         chapter.blocks.map(block => [block.type, block.src])]),
       artProjects: character.artProjects.map(entry => [entry.id, entry.url]),
       trpgScenarios: character.trpgScenarios.map(entry => [entry.id, entry.url])

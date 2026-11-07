@@ -12,6 +12,15 @@ the public reader supports all four languages.
 
 ## Features
 
+- Manga pages can be uploaded together in the cloud-connected studio and
+  reordered by dragging or with the up/down buttons. Uploads are public
+  immediately; if an upload fails, earlier successful pages remain in the draft.
+- Character profiles accept an optional HTTPS YouTube video link, displayed
+  inline using YouTube's privacy-enhanced embed. Loading or playing it contacts YouTube.
+- Gallery, manga and commissions support selecting multiple characters; works
+  linked to any selected character match. Select none to show all works.
+- TRPG pages show external HTTPS record links. Existing linked stories remain
+  in the archive and story pages, but are no longer listed on TRPG detail pages.
 - Responsive character directory with text search and world filters.
 - Character portraits, profile details, tags, and biography sections.
 - Artwork galleries with credits and accessible enlarged-image dialogs.
@@ -46,9 +55,13 @@ the public reader supports all four languages.
 5. After the deployment succeeds, open the URL shown in **Settings > Pages**.
    Usually it is `https://YOUR-USERNAME.github.io/YOUR-REPOSITORY/`.
 
-GitHub Pages is static hosting, not a running backend service. Keep
-[`cloud-config.json`](cloud-config.json) empty for repository-file editing,
-or follow the [setup guide](SETUP-zh-Hant.md) to enable the online owner studio.
+GitHub Pages is static hosting, not a running backend service. The included
+[`cloud-config.json`](cloud-config.json) enables a local-only debug studio on
+`localhost` for previewing and editing browser-local drafts without signing in.
+Do not deploy it with `debugMode` enabled: anyone visiting a deployed debug
+studio can edit their own local copy. To enable the authenticated online owner
+studio, follow the [setup guide](SETUP-zh-Hant.md) and use a config with
+`debugMode` disabled.
 Supabase supplies authentication, a shared public document, and image storage.
 Only allowlisted owners can publish; this is not a public multi-user platform.
 All published content, uploaded images, and files in a public repository are
@@ -74,9 +87,17 @@ does not work because browsers restrict fetching the content JSON from file URLs
 
 After the [one-time setup](SETUP-zh-Hant.md), open **管理網站** in the footer.
 Sign in, choose a character or section, fill in forms, and upload images.
+The studio has separate sections for characters, gallery, stories, manga,
+commissions, creative projects, and TRPG scenarios. Select a character in each
+content section, then expand an item to edit it. A story can be changed to
+manga (or vice versa) using its reading format, subject to the existing
+content-preservation checks; it then appears in the corresponding section.
 Add/reorder/delete biographies, artworks, chapters, Creative Projects, TRPG scenarios,
 and relationships without editing code. IDs and structural changes synchronize
-across languages automatically. The studio can fill blank translations from
+across languages automatically. Gallery works, prose or illustrated chapters,
+manga, and commissions can each be linked to multiple characters from one
+shared entry; they appear once in site-wide collections and on every linked
+character's page. The studio can fill blank translations from
 the current language without overwriting existing translations; it does not
 machine-translate text.
 
@@ -108,10 +129,20 @@ no comments, and no trailing commas.
   birthday, designer, or affiliation.
 - `about`: a list of `{ "title": "...", "text": "..." }` biography sections.
   Use `\n\n` inside a string for paragraph spacing.
-- `gallery`: artwork entries with `title`, `src`, `alt`, `credit`, and `date`.
+- `gallery`: artwork entries with a unique per-character `id`, `characterIds`
+  (one or more linked character IDs), `title`, `src`, `alt`, `credit`, and `date`.
 - `chapters`: entries with a unique per-character `id`, `title`, `date`,
-  `credit`, and a `paragraphs` array of plain-text strings. Array order controls
-  reading order, not the date.
+  `credit`, `characterIds` (one or more linked character IDs), and a
+  `paragraphs` array of plain-text strings. `format` supports prose,
+  illustrated passages, and manga. Array order controls reading order, not the
+  date.
+- `commissions`: entries with a unique per-character `id` and `characterIds`
+  for all linked characters.
+
+The editor upgrades older content automatically: existing artwork, chapters,
+and commissions initially link only to the character that already contains
+them. Keep each shared entry in one character's array; `characterIds` controls
+which other character pages also show it.
 
 Gallery and chapter arrays can be empty. The homepage features the first three
 characters and chapters from the first two characters, in data order.

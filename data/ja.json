@@ -1,5 +1,9 @@
 {
   "ui": {
+    "Filter by characters (match any; none shows all)": "キャラクターで絞り込み（いずれかに一致・未選択ですべて表示）",
+    "Records": "セッション記録",
+    "No records yet.": "記録はまだありません。",
+    "Character video": "キャラクター動画",
     "Commissions": "依頼作品",
     "Characters through the eyes and words of other artists.": "ほかのクリエイターの絵と言葉で描かれた、キャラクターの新たな表情。",
     "Artist social media ↗": "クリエイターの SNS ↗",

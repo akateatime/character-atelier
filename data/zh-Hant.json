@@ -1,5 +1,9 @@
 {
   "ui": {
+    "Filter by characters (match any; none shows all)": "依角色篩選（符合任一角色；未選擇時顯示全部）",
+    "Records": "團錄",
+    "No records yet.": "目前沒有團錄。",
+    "Character video": "角色影片",
     "Commissions": "委託作品",
     "Characters through the eyes and words of other artists.": "透過其他創作者的畫筆與文字，收藏角色不同的面貌。",
     "Artist social media ↗": "創作者社群 ↗",

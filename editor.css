@@ -23,7 +23,9 @@
 .editor-collection { border-top: 1px solid var(--line); margin-top: 30px; padding-top: 24px; }
 .editor-collection h3 { font-family: inherit; font-size: 19px; }
 .editor-entry { border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-top: 20px; background: var(--surface); }
-.editor-entry-actions strong { margin-right: auto; font-size: 14px; }
+.editor-entry-summary { cursor: pointer; font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
+.editor-drag-handle { display: inline-block; margin-left: 12px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; cursor: grab; color: var(--muted); font-size: 12px; }
+.editor-entry[open] > .editor-entry-summary { margin-bottom: 16px; }
 .editor-entry-actions button { padding: 6px 10px; font-size: 12px; }
 .editor-fact { display: grid; grid-template-columns: 1fr 1.5fr auto; gap: 12px; align-items: center; }
 .editor-image-field { display: grid; grid-template-columns: 120px 1fr; gap: 18px; align-items: center; border: 1px dashed var(--line); padding: 18px; border-radius: 12px; margin: 20px 0; }
@@ -47,3 +49,10 @@
 .editor-project-checks { border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin: 18px 0; }
 .editor-project-checks label, .editor-membership { display: flex; align-items: center; gap: 10px; margin: 12px 0; overflow-wrap: anywhere; }
 .editor-project-checks input, .editor-membership input { flex: 0 0 auto; width: 20px; height: 20px; }
+.editor-project-checks .editor-hint { margin: 4px 0 12px; }
+.linked-character-links { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 8px 0; }
+.linked-character-links .text-link { font-size: 12px; }
+.linked-character { display: inline-flex; align-items: center; gap: 6px; }
+.linked-character-avatar, .linked-character-links .linked-character-avatar { display: inline-block; width: 30px; height: 30px; flex: 0 0 30px; margin: 0; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); background: var(--green); }
+.linked-character-avatars { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.gallery-caption > span { overflow-wrap: anywhere; }
