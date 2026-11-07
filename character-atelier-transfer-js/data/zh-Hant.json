@@ -1,0 +1,195 @@
+{
+  "ui": {
+    "Filter by characters (match any; none shows all)": "依角色篩選（符合任一角色；未選擇時顯示全部）",
+    "Records": "團錄",
+    "No records yet.": "目前沒有團錄。",
+    "Character video": "角色影片",
+    "Commissions": "委託作品",
+    "Characters through the eyes and words of other artists.": "透過其他創作者的畫筆與文字，收藏角色不同的面貌。",
+    "Artist social media ↗": "創作者社群 ↗",
+    "Written work": "文字作品",
+    "No commissions yet.": "尚未收錄委託作品。",
+    "Showing {start}–{end} of {total} works": "第 {start}～{end} 件，共 {total} 件作品",
+    "Pagination": "作品分頁",
+    "Page {page} of {pages}": "第 {page}／{pages} 頁",
+    "← Previous page": "← 上一頁",
+    "Next page →": "下一頁 →",
+    "TRPG": "TRPG",
+    "Use the mouse wheel to zoom. Drag empty space to pan. Ctrl/Command + wheel keeps browser zoom. There is nothing to pan when the map fits.": "使用滑鼠滾輪縮放，按住空白處拖曳移動。Ctrl／Command 加滾輪仍為瀏覽器縮放。全圖已在視窗內時無需移動。",
+    "Map zoom": "關係圖縮放",
+    "Zoom level": "縮放比例",
+    "Zoom in": "放大",
+    "Zoom out": "縮小",
+    "Reset zoom": "原始大小",
+    "Fit map": "顯示全圖",
+    "Projects / TRPG": "創作企劃 / TRPG",
+    "Creative Projects": "創作企劃",
+    "Manga": "漫畫",
+    "Illustrated story": "圖文故事",
+    "Participating characters": "參與角色",
+    "No projects yet.": "尚未建立企劃。",
+    "No TRPG scenarios yet.": "尚未建立 TRPG 劇本。",
+    "No participants yet.": "尚無參與角色。",
+    "Manage website": "管理網站",
+    "Relationships": "關係圖",
+    "Explore {name}": "探索{name}的故事與畫作",
+    "Character relationship diagram": "角色關係圖",
+    "Hover or focus a line to read its story. Tap to keep it open. Select a portrait, chapters, or gallery to explore.": "將游標移至連線或用鍵盤聚焦，即可閱讀關係介紹；點擊可保留，再次點擊或按 Esc 關閉。點選肖像、章節或畫廊，探索角色的世界。",
+    "No relationships recorded yet.": "尚未記錄角色關係。",
+    "Relationship map. Scroll horizontally to explore.": "角色關係地圖，可橫向捲動探索。",
+    "Creative journeys": "創作與冒險足跡",
+    "Art Projects": "參與的創作企劃",
+    "TRPG Scenarios": "參與的 TRPG 劇本",
+    "Project details →": "查看詳細資料 →",
+    "Threads of fate": "交織的緣分",
+    "Every meeting leaves a thread. Follow it into their worlds.": "每次相遇，都留下一條牽繫。沿著連線，走進他們的世界。",
+    "Dark mode": "深色模式",
+    "Language": "語言",
+    "Skip to content": "跳至主要內容",
+    "Character Atelier home": "Character Atelier 首頁",
+    "Main navigation": "主要導覽",
+    "Discover": "探索",
+    "Characters": "角色",
+    "Gallery": "畫廊",
+    "Stories": "故事",
+    "An original character archive": "原創角色典藏館",
+    "A home for characters. A place for their stories.": "讓角色安居，讓故事延續。",
+    "Made for the worlds you imagine.": "獻給你想像中的每一個世界。",
+    "View all →": "查看全部 →",
+    "Chapter {number}": "第 {number} 章",
+    "No chapters yet. The next story is still being dreamed.": "尚未有章節，下一個故事正在醞釀。",
+    "Meet the characters →": "認識角色 →",
+    "Explore the gallery →": "漫遊畫廊 →",
+    "A collection of extraordinary lives": "收藏每一段不平凡的人生",
+    "Every character has a story": "每個角色，都有自己的故事",
+    "characters": "位角色",
+    "artworks": "幅作品",
+    "chapters": "篇章節",
+    "From the storybook": "翻開故事書",
+    "Little chapters from bigger worlds.": "小小篇章，通往遼闊世界。",
+    "A little corner of the imagination": "想像中的一隅",
+    "Meet the residents": "與居民相遇",
+    "Original characters, each with a world of their own.": "每一位原創角色，都擁有獨一無二的世界。",
+    "The character directory": "角色名錄",
+    "Find a familiar face, or discover someone new.": "尋找熟悉的面孔，或邂逅新的朋友。",
+    "Search names, worlds, or details...": "搜尋名字、世界或角色設定……",
+    "Search characters": "搜尋角色",
+    "Filter characters by world": "依世界篩選角色",
+    "No characters found. Try another name or world.": "找不到角色，試試其他名字或世界。",
+    "{count} character found": "找到 {count} 位角色",
+    "{count} characters found": "找到 {count} 位角色",
+    "All worlds": "所有世界",
+    "Close": "關閉",
+    "Art by {credit}": "繪者：{credit}",
+    "View {title} by {credit}": "檢視《{title}》，繪者：{credit}",
+    "No artwork yet. This gallery is waiting for its first piece.": "畫廊尚無作品，正等待第一幅畫作。",
+    "Breadcrumb": "導覽路徑",
+    "Character sections": "角色資料分頁",
+    "About": "角色介紹",
+    "Chapters": "故事章節",
+    "The story so far": "故事至今",
+    "Chapter navigation": "章節導覽",
+    "← Previous chapter": "← 上一章",
+    "All chapters": "所有章節",
+    "Next chapter →": "下一章 →",
+    "A path not yet drawn": "尚未描繪的小徑",
+    "Page not found": "找不到頁面",
+    "This character, chapter, or page does not exist.": "此角色、章節或頁面不存在。",
+    "Back to the atelier": "返回創作工房",
+    "The art wall": "作品展示牆",
+    "Collected moments": "珍藏的片刻",
+    "Portraits, places, and little glimpses into their lives.": "肖像、風景，以及生活中的點滴。",
+    "The storybook": "故事之書",
+    "Stories worth staying for": "值得駐足的故事",
+    "Choose a chapter and wander into another world.": "選擇一篇章節，漫步另一個世界。"
+  },
+  "site": {
+    "eyebrow": "珍藏想像中的人生",
+    "title": "小小角色。\n無盡世界。",
+    "description": "歡迎來到想像中的靜謐角落。認識原創角色，收藏他們的片刻，沉浸於屬於他們的故事。",
+    "heroAlt": "原創插畫：寧靜花園中的拱形門扉，天空懸著一輪蜜桃色的月亮。",
+    "noteTitle": "每個世界，都始於一個人。",
+    "note": "筆記本裡的名字，書頁邊的速寫，還有那些縈繞心頭的故事。這裡，是它們共同的家。"
+  },
+  "relationships": {
+    "mira-rowan": {
+      "label": "無字的信",
+      "description": "羅文每週四帶著大多空白的信封，拜訪米拉的溫室。這份安靜的友誼，由日常的小小儀式，以及「有些心意無須文字」的默契交織而成。"
+    }
+  },
+  "characters": {
+    "mira": {
+      "artProjects": {},
+      "trpgScenarios": {},
+      "name": "米拉・艾弗蕨",
+      "world": "靜謐花園",
+      "summary": "收集被遺忘的名字，培育不可思議花朵的植物學徒。",
+      "portraitAlt": "米拉的風格化肖像：深綠色頭髮、米白色衣領，以及一朵小金花。",
+      "tags": ["植物學家", "溫柔靈魂", "奇幻"],
+      "facts": { "年齡": "24", "代名詞": "她", "職業": "植物學徒", "住處": "玻璃溫室", "創作者": "你的名字" },
+      "about": [
+        { "title": "微小事物的守護者", "text": "米拉相信，只要有人記得名字，就沒有什麼會真正消失。在城鎮邊緣的老玻璃溫室裡，她照料著必須聽到故事才會開花的植物。\n\n她對幼苗很有耐心，對鎖住的門就沒那麼有耐心了。她的指甲縫裡，總是藏著一點泥土。" },
+        { "title": "外貌與性格", "text": "苔蘚綠的頭髮、穿得柔軟的亞麻洋裝，以及塞滿摺紙的口袋。起初安靜的米拉，只要遇見願意聽她說一片葉子故事的人，就會變得格外健談。" },
+        { "title": "人際關係", "text": "羅文每週四都會送信到溫室。兩人從未提起，大多數信封其實都是空的。他們都同意，有些心意不需要文字。" }
+      ],
+      "gallery": [
+        { "title": "溫室守護者", "alt": "柔和鼠尾草綠背景前，綠髮間別著小花的米拉。", "credit": "Character Atelier 示範作品" },
+        { "title": "月光花盛開之處", "alt": "柔綠樹木與粉色花朵環繞的拱形花園門。", "credit": "Character Atelier 示範作品" }
+      ],
+      "chapters": {
+        "the-first-seed": {
+          "title": "第一顆種子",
+          "credit": "Character Atelier 示範作品",
+          "paragraphs": [
+            "信封沒有貼郵票。米拉在溫室門縫下發現了它，正好落在晨光於地板映出的一小方溫暖裡。",
+            "裡面是一顆不比句點大的種子，以及一張字跡似曾相識的便條：請替我記住它。",
+            "她取來最小的花盆。當然，有許多實際的問題。要用什麼土？澆多少水？但種子已在她掌心微微發暖，那些問題可以等等。",
+            "「先從你的名字開始吧。」她說。",
+            "窗外，鎮上的鐘敲響了一個不存在的時辰。"
+          ]
+        },
+        "an-hour-for-growing": {
+          "title": "生長的時辰",
+          "credit": "Character Atelier 示範作品",
+          "paragraphs": [
+            "隔天早上，種子長出了一片銀葉。它沒有朝向窗戶，而是傾向米拉收藏未寄出信件的緊閉抽屜。",
+            "她移動花盆，葉子便轉向。她又移了一次，葉子再次轉過去，像指南針般耐心而篤定。",
+            "最後，她打開抽屜。最舊的那封信，是寫給十年後的自己。",
+            "「你來早了。」她對植物說。銀葉緩緩展開，溫室某處響起了小小的、不可能存在的鈴聲。"
+          ]
+        }
+      }
+    },
+    "rowan": {
+      "artProjects": {},
+      "trpgScenarios": {},
+      "name": "羅文・維爾",
+      "world": "靜謐花園",
+      "summary": "帶著一張尚未建成道路的地圖，四處漂泊的郵差。",
+      "portraitAlt": "羅文的風格化肖像：赤褐色頭髮、藍色外套，以及斜背郵差包。",
+      "tags": ["郵差", "旅人", "奇幻"],
+      "facts": { "年齡": "27", "代名詞": "They / them（中性）", "職業": "郵差", "住處": "道路盡頭的任何地方", "創作者": "你的名字" },
+      "about": [
+        { "title": "寄往夾縫的信", "text": "有些地址不在任何地圖上，但羅文依然會送達。郵差包能擋風雨，靴子卻不能；至於方向感，則取決於路的另一端有誰在等待。" },
+        { "title": "外貌與性格", "text": "銅色頭髮、寬大的藍外套，以及一枚指向未竟之事的黃銅羅盤。羅文有著冷面幽默，也總能為迷路的人指引正確方向。" },
+        { "title": "一個小祕密", "text": "七年來，羅文一直帶著一封收件人寫著「未來的你」的信。直到現在，羅文還沒決定，打開它算不算完成投遞。" }
+      ],
+      "gallery": [
+        { "title": "目的地之間", "alt": "杏色圓形背景前，穿著藍外套、背著棕色郵差包的羅文。", "credit": "Character Atelier 示範作品" }
+      ],
+      "chapters": {
+        "the-unmarked-road": {
+          "title": "地圖之外的路",
+          "credit": "Character Atelier 示範作品",
+          "paragraphs": [
+            "星期一，出城的路有十二條。到了星期四，卻變成了十三條。",
+            "羅文會注意到，是因為那條新路聞起來有雨的味道，儘管整週都是晴天。而且，包裡多了一封信，地址寫著：從前不存在的路一號。",
+            "「真是具體。」羅文低聲說，檢查了一下靴子。",
+            "路的盡頭有一棟沒有窗戶的小屋。大門上的信箱開口，形狀像一抹微笑。",
+            "羅文敲了敲門。門的另一邊，傳來自己的聲音：「你來得正是時候。」"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,153 @@
+{
+  "site": {
+    "eyebrow": "An archive of imagined lives",
+    "title": "Small characters.\nEndless worlds.",
+    "description": "Welcome to a quiet corner of the imagination. Meet original characters, collect their moments, and get lost in their stories.",
+    "heroImage": "assets/quiet-garden.svg",
+    "heroAlt": "An original illustration of an arched doorway in a quiet garden, beneath a peach-colored moon.",
+    "noteTitle": "Every world starts with someone.",
+    "note": "A name in a notebook. A sketch in the margin. A story that won't leave you alone. This is a home for all of them."
+  },
+  "relationships": [
+    {
+      "id": "mira-rowan",
+      "from": "mira",
+      "to": "rowan",
+      "label": "Letters without words",
+      "description": "Rowan visits Mira's glasshouse every Thursday with mostly empty envelopes. Their quiet friendship is built on small rituals and the belief that some messages need no words."
+    }
+  ],
+  "characters": [
+    {
+      "id": "mira",
+      "artProjects": [],
+      "trpgScenarios": [],
+      "name": "Mira Everfern",
+      "world": "The Quiet Garden",
+      "summary": "An apprentice botanist who collects forgotten names and grows impossible flowers.",
+      "portrait": "assets/mira.svg",
+      "portraitAlt": "Stylized portrait of Mira, with dark green hair, a cream collar, and a little golden flower.",
+      "tags": ["Botanist", "Gentle soul", "Fantasy"],
+      "facts": {
+        "Age": "24",
+        "Pronouns": "She / her",
+        "Occupation": "Apprentice botanist",
+        "Home": "The Glasshouse",
+        "Creator": "Your name"
+      },
+      "about": [
+        {
+          "title": "A keeper of small things",
+          "text": "Mira believes nothing is truly lost if someone remembers its name. In the old glasshouse at the edge of town, she tends plants that bloom only when someone tells them a story.\n\nShe is patient with seedlings, less patient with locked doors, and always has soil beneath her fingernails."
+        },
+        {
+          "title": "Appearance & personality",
+          "text": "Moss-green hair, a well-loved linen dress, and pockets full of folded paper. Quiet at first, Mira becomes wonderfully talkative around anyone willing to listen to a story about a leaf."
+        },
+        {
+          "title": "Connections",
+          "text": "Rowan delivers letters to the glasshouse every Thursday. Neither has mentioned that most of the envelopes are empty. Some messages, they agree, don't need words."
+        }
+      ],
+      "gallery": [
+        {
+          "title": "The glasshouse keeper",
+          "src": "assets/mira.svg",
+          "alt": "Mira wearing a tiny flower in her green hair against a soft sage background.",
+          "credit": "Character Atelier demo",
+          "date": "2026-11-01"
+        },
+        {
+          "title": "Where the moonflowers grow",
+          "src": "assets/quiet-garden.svg",
+          "alt": "An arched garden gate surrounded by soft green trees and pink flowers.",
+          "credit": "Character Atelier demo",
+          "date": "2026-11-03"
+        }
+      ],
+      "chapters": [
+        {
+          "id": "the-first-seed",
+          "title": "The first seed",
+          "date": "2026-11-01",
+          "credit": "Character Atelier demo",
+          "paragraphs": [
+            "The envelope arrived without a stamp. Mira found it tucked beneath the glasshouse door, exactly where the morning sunlight made a small, warm square on the floor.",
+            "Inside was a seed no larger than a full stop, and a note in handwriting she almost recognized: Please remember this for me.",
+            "She fetched her smallest pot. There were practical questions, of course. What kind of soil? How much water? But the seed was already warm in her palm, and practical questions could wait.",
+            "\"Let's start with your name,\" she said.",
+            "Outside, the town clock struck an hour that did not exist."
+          ]
+        },
+        {
+          "id": "an-hour-for-growing",
+          "title": "An hour for growing",
+          "date": "2026-11-04",
+          "credit": "Character Atelier demo",
+          "paragraphs": [
+            "By the next morning, the seed had grown a single silver leaf. It leaned not toward the window, but toward the closed drawer where Mira kept letters she had never sent.",
+            "She moved the pot. The leaf turned. She moved it again, and the leaf turned again, with the patient certainty of a compass.",
+            "At last she opened the drawer. The oldest letter was addressed to herself, ten years from now.",
+            "\"You're early,\" she told the plant. Its silver leaf unfolded, and somewhere in the glasshouse a small, impossible bell began to ring."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rowan",
+      "artProjects": [],
+      "trpgScenarios": [],
+      "name": "Rowan Vale",
+      "world": "The Quiet Garden",
+      "summary": "A wandering postman with a map of roads that haven't been built yet.",
+      "portrait": "assets/rowan.svg",
+      "portraitAlt": "Stylized portrait of Rowan with rust-colored hair, a blue coat, and a messenger bag.",
+      "tags": ["Postman", "Wanderer", "Fantasy"],
+      "facts": {
+        "Age": "27",
+        "Pronouns": "They / them",
+        "Occupation": "Postman",
+        "Home": "Wherever the road ends",
+        "Creator": "Your name"
+      },
+      "about": [
+        {
+          "title": "Letters to the in-between",
+          "text": "Some addresses aren't on any map. Rowan delivers to them anyway. Their bag is weatherproof, their boots are not, and their sense of direction depends on who is waiting at the other end."
+        },
+        {
+          "title": "Appearance & personality",
+          "text": "Copper hair, an oversized blue coat, and a brass compass that points toward unfinished business. Rowan has a dry sense of humor and a habit of giving lost people very good directions."
+        },
+        {
+          "title": "A small secret",
+          "text": "For seven years, Rowan has carried one letter addressed to The person you will become. They haven't decided whether opening it would count as delivering it."
+        }
+      ],
+      "gallery": [
+        {
+          "title": "Between destinations",
+          "src": "assets/rowan.svg",
+          "alt": "Rowan in a blue coat with a brown messenger bag, framed by an apricot-colored circle.",
+          "credit": "Character Atelier demo",
+          "date": "2026-11-02"
+        }
+      ],
+      "chapters": [
+        {
+          "id": "the-unmarked-road",
+          "title": "The unmarked road",
+          "date": "2026-11-02",
+          "credit": "Character Atelier demo",
+          "paragraphs": [
+            "There were twelve roads out of town on Monday. By Thursday, there were thirteen.",
+            "Rowan noticed because the new road smelled of rain, although the sky had been clear all week. Also, there was a letter in their bag addressed to Number One, The Road That Wasn't There Before.",
+            "\"Very specific,\" they murmured, and checked their boots.",
+            "At the end of the road stood a small house with no windows. Its front door had a letterbox shaped like a smile.",
+            "Rowan knocked. From the other side, their own voice said, \"You're right on time.\""
+          ]
+        }
+      ]
+    }
+  ]
+}

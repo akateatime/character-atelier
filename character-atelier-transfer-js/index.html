@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-Hant" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f7f3ed">
+    <meta name="description" content="原創角色、畫作與故事的收藏天地。">
+    <title>Character Atelier</title>
+    <link rel="icon" href="assets/emblem.svg" type="image/svg+xml">
+    <script src="theme.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="editor.css">
+    <script src="cloud.js" defer></script>
+    <script src="editor.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳至主要內容</a>
+    <header class="site-header">
+      <a class="brand" href="#/" aria-label="Character Atelier 首頁"><img src="assets/emblem.svg" alt="" width="38" height="38">Character <span>Atelier</span></a>
+      <nav aria-label="主要導覽">
+        <a href="#/" data-nav="home">探索</a>
+        <a href="#/characters" data-nav="characters">角色</a>
+        <a href="#/relationships" data-nav="relationships">關係圖</a>
+        <a href="#/gallery" data-nav="gallery">畫廊</a>
+        <a href="#/stories" data-nav="stories">故事</a>
+        <a href="#/manga" data-nav="manga">漫畫</a>
+        <a href="#/commissions" data-nav="commissions">委託作品</a>
+        <a href="#/projects" data-nav="projects">創作企劃</a>
+        <a href="#/trpg" data-nav="trpg">TRPG</a>
+      </nav>
+      <span class="header-note">原創角色典藏館</span>
+      <div class="header-tools">
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="深色模式" aria-pressed="false">
+        <span class="theme-icon" aria-hidden="true">◐</span><span class="theme-label">深色模式</span>
+      </button>
+      <label class="language-control"><span aria-hidden="true">◎</span><select id="language" aria-label="語言">
+        <option value="zh-Hant" selected>繁體中文</option>
+        <option value="en">English</option>
+        <option value="ja">日本語</option>
+        <option value="ko">한국어</option>
+      </select></label>
+      </div>
+    </header>
+    <main id="main" tabindex="-1"><div class="loading" role="status">載入中 · Opening · 読み込み中 · 불러오는 중…</div></main>
+    <footer><a class="brand small" href="#/">Character Atelier</a><p>讓角色安居，讓故事延續。</p><a class="owner-link text-link" href="#/admin">管理網站</a><span>獻給你想像中的每一個世界。</span></footer>
+    <noscript><p class="notice">請啟用 JavaScript。 / Please enable JavaScript. / JavaScriptを有効にしてください。 / JavaScript를 활성화해 주세요.</p></noscript>
+  </body>
+</html>
