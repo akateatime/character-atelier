@@ -7,7 +7,7 @@ let language = 'zh-Hant';
 let catalogues;
 let translationsReady = false;
 let cloudVersion = 0;
-const collectionFilters = { gallery: new Set(), manga: new Set(), commissions: new Set() };
+const collectionFilters = { gallery: new Set(), manga: new Set(), stories: new Set(), commissions: new Set() };
 const cloud = window.AtelierCloud;
 const languageControl = document.querySelector('#language');
 const supportedLanguages = ['en', 'zh-Hant', 'ja', 'ko'];
@@ -180,11 +180,15 @@ function section(title, subtitle, destination, children) {
   return element;
 }
 
-function storyList(characters, accept = () => true) {
+function linkedStoryItems(characters, accept = () => true) {
   const characterIds = new Set(characters.map(character => character.id));
-  return storyItems(content.characters.flatMap(character => character.chapters
+  return content.characters.flatMap(character => character.chapters
     .map((chapter, index) => ({ character, chapter, index }))
-    .filter(({ chapter }) => chapter.characterIds.some(id => characterIds.has(id)) && accept(chapter))));
+    .filter(({ chapter }) => chapter.characterIds.some(id => characterIds.has(id)) && accept(chapter)));
+}
+
+function storyList(characters, accept = () => true) {
+  return storyItems(linkedStoryItems(characters, accept));
 }
 
 function storyItems(items, covers = false) {
@@ -254,6 +258,10 @@ function collectionPage(kind, requestedPage) {
     start: items.length ? start + 1 : 0, end: start + visible.length, total: items.length
   }));
   main.append(summary, kind === 'commissions' ? commissionList(visible) : kind === 'gallery' ? gallery(visible) : storyItems(visible, true));
+  main.append(paginationControls(page, pages, pageUrl));
+}
+
+function paginationControls(page, pages, pageUrl) {
   const pagination = node('nav', 'pagination');
   pagination.setAttribute('aria-label', t('Pagination'));
   const control = (label, number, enabled) => {
@@ -266,7 +274,7 @@ function collectionPage(kind, requestedPage) {
   status.setAttribute('aria-current', 'page');
   pagination.append(control('← Previous page', page - 1, page > 1), status,
     control('Next page →', page + 1, page < pages));
-  main.append(pagination);
+  return pagination;
 }
 
 function commissionCredit(commission) {
@@ -455,7 +463,7 @@ function relationshipDiagram(current) {
   const characters = content.characters.filter(character => !current || character.id === current.id || connected.has(character.id));
   const wrapper = node('section', 'relationship-atlas');
   wrapper.setAttribute('aria-label', t('Character relationship diagram'));
-  wrapper.append(node('p', 'diagram-help', t('Hover or focus a line to read its story. Tap to keep it open. Select a portrait, chapters, or gallery to explore.')));
+  wrapper.append(node('p', 'diagram-help', t('Hover or focus a line to read its story. Tap to keep it open. Select a portrait to explore.')));
   wrapper.querySelector('.diagram-help').append(document.createTextNode(` ${t('Use the mouse wheel to zoom. Drag empty space to pan. Ctrl/Command + wheel keeps browser zoom. There is nothing to pan when the map fits.')}`));
   if (!relationships.length) {
     wrapper.append(node('p', 'empty', t('No relationships recorded yet.')));
@@ -691,7 +699,7 @@ function relationshipDiagram(current) {
     card.style.top = `${position.y}px`;
     const portrait = link('', characterUrl(character), 'relationship-portrait');
     portrait.append(image(character.portrait, character.portraitAlt), node('strong', '', character.name));
-    card.append(portrait, characterLinks(character));
+    card.append(portrait);
     canvas.append(card);
   });
   canvas.append(tooltip);
@@ -764,9 +772,6 @@ function projectPage(project) {
   }
   const key = project.kind === 'creative' ? 'artProjects' : 'trpgScenarios';
   const participants = content.characters.filter(character => character[key].some(entry => entry.id === project.id));
-  const grid = node('div', 'grid');
-  participants.forEach(character => grid.append(characterCard(character)));
-  if (!participants.length) grid.append(node('p', 'empty', t('No participants yet.')));
   const pictures = allArtwork().filter(({ art }) => art.projectIds.includes(project.id));
   content.characters.forEach(character => character.chapters.filter(chapter => chapter.projectIds.includes(project.id)).forEach(chapter => {
     chapter.blocks.forEach((block, index) => {
@@ -777,8 +782,18 @@ function projectPage(project) {
       });
     });
   }));
-  main.append(node('h2', '', t('Participating characters')), grid);
   if (project.kind === 'trpg') {
+    const layout = node('div', 'trpg-overview');
+    const people = node('section', 'trpg-participants');
+    const icons = node('div', 'trpg-participant-list');
+    participants.forEach(character => {
+      const item = link('', characterUrl(character), 'trpg-participant');
+      item.append(image(character.portrait, '', 'trpg-participant-avatar'), node('span', '', character.name));
+      icons.append(item);
+    });
+    if (!participants.length) icons.append(node('p', 'empty', t('No participants yet.')));
+    people.append(node('h2', '', t('Participating characters')), icons);
+    const recordSection = node('section', 'trpg-record-section');
     const records = node('ul', 'trpg-records');
     project.records.forEach(record => {
       const row = node('li');
@@ -788,15 +803,21 @@ function projectPage(project) {
       row.append(external);
       records.append(row);
     });
-    main.append(node('h2', '', t('Records')), records);
     if (!project.records.length) records.append(node('li', '', t('No records yet.')));
+    recordSection.append(node('h2', '', t('Records')), records);
+    layout.append(people, recordSection);
+    main.append(layout);
   } else {
-    main.append(node('h2', '', t('Stories')), storyList(content.characters, chapter => chapter.projectIds.includes(project.id)));
+    const grid = node('div', 'grid');
+    participants.forEach(character => grid.append(characterCard(character)));
+    if (!participants.length) grid.append(node('p', 'empty', t('No participants yet.')));
+    main.append(node('h2', '', t('Participating characters')), grid,
+      node('h2', '', t('Stories')), storyList(content.characters, chapter => chapter.projectIds.includes(project.id)));
   }
   main.append(node('h2', '', t('Gallery')), gallery(pictures));
 }
 
-function profile(character, tab) {
+function profile(character, tab, requestedPage = 1) {
   main.append(breadcrumbs([[t('Characters'), '#/characters'], [character.name]]));
   const layout = node('div', 'profile');
   const sidebar = node('aside', 'profile-sidebar');
@@ -833,17 +854,25 @@ function profile(character, tab) {
       body.append(frame);
     }
     body.append(participation(character));
-  } else if (tab === 'gallery') {
-    body.append(gallery(allArtwork().filter(({ art }) => art.characterIds.includes(character.id))));
-  } else if (tab === 'commissions') {
-    const commissions = content.characters.flatMap(owner => owner.commissions
-      .filter(commission => commission.characterIds.includes(character.id))
-      .map(commission => ({ character: owner, commission })));
-    body.append(node('h2', '', t('Commissions')), commissionList(commissions));
-  } else if (tab === 'manga') {
-    body.append(node('h2', '', t('Manga')), storyList([character], chapter => chapter.format === 'manga'));
   } else {
-    body.append(node('h2', '', t('The story so far')), storyList([character]));
+    const items = tab === 'gallery' ? allArtwork().filter(({ art }) => art.characterIds.includes(character.id)) :
+      tab === 'commissions' ? content.characters.flatMap(owner => owner.commissions
+      .filter(commission => commission.characterIds.includes(character.id))
+      .map(commission => ({ character: owner, commission }))) :
+      linkedStoryItems([character], chapter => tab !== 'manga' || chapter.format === 'manga');
+    const pageSize = 6;
+    const pages = Math.max(1, Math.ceil(items.length / pageSize));
+    const page = Math.min(requestedPage, pages);
+    const pageUrl = number => `${characterUrl(character, tab)}${number === 1 ? '' : `/page/${number}`}`;
+    if (page !== requestedPage) history.replaceState(null, '', pageUrl(page));
+    const start = (page - 1) * pageSize;
+    const visible = items.slice(start, start + pageSize);
+    if (tab !== 'gallery') body.append(node('h2', '', t(tab === 'commissions' ? 'Commissions' : tab === 'manga' ? 'Manga' : 'The story so far')));
+    body.append(node('p', 'collection-summary', t('Showing {start}–{end} of {total} works', {
+      start: items.length ? start + 1 : 0, end: start + visible.length, total: items.length
+    })));
+    body.append(tab === 'gallery' ? gallery(visible) : tab === 'commissions' ? commissionList(visible) : storyItems(visible),
+      paginationControls(page, pages, pageUrl));
   }
   layout.append(sidebar, body);
   main.append(layout);
@@ -943,10 +972,15 @@ function route(focus = true) {
     main.append(heading(t('Threads of fate'), t('Relationships'), t('Every meeting leaves a thread. Follow it into their worlds.')), relationshipDiagram());
     title = t('Relationships');
   }
-  else if (parts[0] === 'character' && (parts.length === 2 || parts.length === 3)) {
+  else if (parts[0] === 'character' && (parts.length === 2 || parts.length === 3 ||
+      (parts.length === 5 && parts[3] === 'page' && /^[1-9]\d*$/.test(parts[4]) && Number.isSafeInteger(Number(parts[4]))))) {
     const character = content.characters.find(item => item.id === parts[1]);
     const tab = parts[2] || 'about';
-    if (character && ['about', 'gallery', 'stories', 'manga', 'commissions'].includes(tab)) { profile(character, tab); title = character.name; nav = 'characters'; }
+    if (character && ['about', 'gallery', 'stories', 'manga', 'commissions'].includes(tab) &&
+        (parts.length !== 5 || tab !== 'about')) {
+      profile(character, tab, parts.length === 5 ? Number(parts[4]) : 1);
+      title = character.name; nav = 'characters';
+    }
     else title = notFound();
   } else if (parts[0] === 'commission' && parts.length === 3) {
     const character = content.characters.find(item => item.id === parts[1]);

@@ -34,7 +34,7 @@
     "Relationships": "関係図",
     "Explore {name}": "{name}の物語と作品を探す",
     "Character relationship diagram": "キャラクター関係図",
-    "Hover or focus a line to read its story. Tap to keep it open. Select a portrait, chapters, or gallery to explore.": "線にカーソルを合わせるかキーボードで選ぶと、関係の紹介が表示されます。タップで固定し、再度タップか Esc で閉じられます。肖像・章・ギャラリーから世界を巡りましょう。",
+    "Hover or focus a line to read its story. Tap to keep it open. Select a portrait to explore.": "線にカーソルを合わせるかキーボードで選ぶと、関係の紹介が表示されます。タップで固定し、再度タップか Esc で閉じられます。肖像からキャラクターを見られます。",
     "No relationships recorded yet.": "関係はまだ記録されていません。",
     "Relationship map. Scroll horizontally to explore.": "キャラクター関係図。横にスクロールして探索できます。",
     "Creative journeys": "創作と冒険の足跡",

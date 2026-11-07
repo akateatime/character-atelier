@@ -17,8 +17,15 @@ the public reader supports all four languages.
   immediately; if an upload fails, earlier successful pages remain in the draft.
 - Character profiles accept an optional HTTPS YouTube video link, displayed
   inline using YouTube's privacy-enhanced embed. Loading or playing it contacts YouTube.
-- Gallery, manga and commissions support selecting multiple characters; works
+- Character gallery, stories, manga, and commission tabs show at most six linked
+  works per page, with shareable pagination links.
+- TRPG detail pages show compact participant portraits alongside external records.
+- Gallery, manga, stories and commissions support selecting multiple characters; works
   linked to any selected character match. Select none to show all works.
+- Project and TRPG entries can be duplicated as templates, including their
+  translated fields and record links, without copying character or work links.
+- When uploading a character portrait, choose a square crop by dragging or
+  using sliders, or keep the original image. Cropping produces a static PNG.
 - TRPG pages show external HTTPS record links. Existing linked stories remain
   in the archive and story pages, but are no longer listed on TRPG detail pages.
 - Responsive character directory with text search and world filters.
@@ -239,8 +246,7 @@ rules and GitHub Pages deep-link 404 errors.
 
 The **關係圖 / Relationships** page displays all characters. Each profile also
 shows a focused map containing that character and their direct connections.
-Portraits link to profiles; the chapter and gallery shortcuts beneath each
-portrait link to that character's stories and pictures.
+Portraits link to profiles; relationship cards show only the portrait and name.
 
 Hover a connecting line or its star, or focus it with Tab, to reveal a short
 relationship introduction. Click, tap, Enter, or Space pins the introduction;

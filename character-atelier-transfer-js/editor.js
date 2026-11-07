@@ -137,7 +137,122 @@ window.AtelierEditor = (() => {
     return select;
   }
 
-  function imageField(parent, label, src, update) {
+  async function cropPortrait(file) {
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'].includes(file.type) ||
+        !file.size || file.size > 5 * 1024 * 1024) {
+      throw new Error('請選擇 5 MB 以下的 JPG、PNG、WebP、GIF 或 AVIF 圖片。不接受 SVG。');
+    }
+    const bitmap = await createImageBitmap(file);
+    const objectUrl = URL.createObjectURL(file);
+    const dialog = el('dialog', 'editor-crop');
+    try {
+      const heading = el('h2', '', '截取角色肖像 / Crop portrait');
+      heading.id = 'editor-crop-title';
+      dialog.setAttribute('aria-labelledby', heading.id);
+      dialog.append(heading,
+        el('p', '', '拖曳方框或使用滑桿選擇範圍；也可以保留原圖。動態圖片裁切後會變成靜態圖片。'));
+      const stage = el('div', 'editor-crop-stage');
+      const image = el('img');
+      image.src = objectUrl;
+      image.alt = '待裁切的角色肖像';
+      const selection = el('div', 'editor-crop-selection');
+      selection.setAttribute('aria-hidden', 'true');
+      stage.append(image, selection);
+      dialog.append(stage);
+      const controls = el('div', 'editor-crop-controls');
+      const range = (label, value, min) => {
+        const wrapper = el('label');
+        wrapper.append(el('span', '', label));
+        const input = el('input');
+        input.type = 'range';
+        input.min = min;
+        input.max = 100;
+        input.value = value;
+        wrapper.append(input);
+        controls.append(wrapper);
+        return input;
+      };
+      const size = range('選取大小 / Size', 100, 10);
+      const horizontal = range('水平位置 / Horizontal', 50, 0);
+      const vertical = range('垂直位置 / Vertical', 50, 0);
+      const geometry = () => {
+        const side = Math.min(bitmap.width, bitmap.height) * Number(size.value) / 100;
+        return { side, x: (bitmap.width - side) * Number(horizontal.value) / 100,
+          y: (bitmap.height - side) * Number(vertical.value) / 100 };
+      };
+      const updateSelection = () => {
+        const { side, x, y } = geometry();
+        selection.style.left = `${x / bitmap.width * 100}%`;
+        selection.style.top = `${y / bitmap.height * 100}%`;
+        selection.style.width = `${side / bitmap.width * 100}%`;
+        selection.style.height = `${side / bitmap.height * 100}%`;
+      };
+      [size, horizontal, vertical].forEach(input => input.addEventListener('input', updateSelection));
+      selection.addEventListener('pointerdown', event => {
+        event.preventDefault();
+        const start = geometry();
+        const bounds = image.getBoundingClientRect();
+        const pointerX = event.clientX;
+        const pointerY = event.clientY;
+        selection.setPointerCapture(event.pointerId);
+        const move = next => {
+          const x = start.x + (next.clientX - pointerX) * bitmap.width / bounds.width;
+          const y = start.y + (next.clientY - pointerY) * bitmap.height / bounds.height;
+          const maxX = bitmap.width - start.side;
+          const maxY = bitmap.height - start.side;
+          horizontal.value = maxX ? Math.max(0, Math.min(100, x / maxX * 100)) : 50;
+          vertical.value = maxY ? Math.max(0, Math.min(100, y / maxY * 100)) : 50;
+          updateSelection();
+        };
+        selection.addEventListener('pointermove', move);
+        selection.addEventListener('lostpointercapture', () => selection.removeEventListener('pointermove', move), { once: true });
+      });
+      dialog.append(controls);
+      const actions = el('div', 'editor-actions');
+      const action = text => {
+        const control = el('button', 'editor-button', text);
+        control.type = 'button';
+        actions.append(control);
+        return control;
+      };
+      const cancel = action('取消 / Cancel');
+      const original = action('使用原圖 / Use original');
+      const crop = action('截取並上傳 / Crop and upload');
+      crop.classList.add('primary');
+      dialog.append(actions);
+      updateSelection();
+      document.body.append(dialog);
+      const result = await new Promise(resolve => {
+        cancel.addEventListener('click', () => resolve('cancel'));
+        original.addEventListener('click', () => resolve('original'));
+        crop.addEventListener('click', () => resolve('crop'));
+        dialog.addEventListener('keydown', event => {
+          if (event.key === 'Escape') { event.preventDefault(); resolve('cancel'); }
+        });
+        dialog.addEventListener('cancel', event => { event.preventDefault(); resolve('cancel'); });
+        dialog.addEventListener('close', () => resolve('cancel'), { once: true });
+        dialog.showModal();
+      });
+      if (result === 'cancel') return null;
+      if (result === 'original') return file;
+      const { side, x, y } = geometry();
+      const canvas = el('canvas');
+      canvas.width = canvas.height = Math.min(1024, Math.max(1, Math.round(side)));
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('無法建立圖片裁切畫布。');
+      context.drawImage(bitmap, x, y, side, side, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error('無法產生裁切後的圖片。');
+      return new File([blob], 'portrait.png', { type: 'image/png' });
+    } finally {
+      if (dialog.open) dialog.close();
+      dialog.remove();
+      URL.revokeObjectURL(objectUrl);
+      bitmap.close();
+    }
+  }
+
+  function imageField(parent, label, src, update, { crop = false } = {}) {
     const group = el('div', 'editor-image-field');
     const preview = el('img');
     if ((/^assets\//.test(src) && !src.split('/').includes('..')) || api.cloud.imageAllowed(src)) preview.src = src;
@@ -158,13 +273,15 @@ window.AtelierEditor = (() => {
       if (!file.files[0]) return;
       try {
         await operation(async () => {
+          const selected = crop ? await cropPortrait(file.files[0]) : file.files[0];
+          if (!selected) return;
           message('圖片上傳中，請稍候…');
-          const url = await api.cloud.upload(file.files[0]);
+          const url = await api.cloud.upload(selected);
           update(url);
           input.value = url;
           preview.src = url;
           changed();
-          message('圖片已上傳（檔案公開），請按「發布網站」讓頁面使用此圖片。');
+          if (stored) message('圖片已上傳（檔案公開），請按「發布網站」讓頁面使用此圖片。');
         });
       } catch (error) { errorMessage(error); }
       finally { file.value = ''; }
@@ -229,7 +346,7 @@ window.AtelierEditor = (() => {
     });
   }
 
-  function collection(parent, title, getItems, renderItem, makeItem, onRemove, include = () => true, draggable = false) {
+  function collection(parent, title, getItems, renderItem, makeItem, onRemove, include = () => true, draggable = false, duplicate) {
     const group = el('section', 'editor-collection');
     let dragging;
     const header = el('div', 'editor-section-heading');
@@ -306,8 +423,9 @@ window.AtelierEditor = (() => {
       up.disabled = position === 0;
       const down = button('↓ 下移', () => move(1));
       down.disabled = position === visible.length - 1;
-      actions.append(up, down,
-        button('刪除 / Delete', async () => {
+      actions.append(up, down);
+      if (duplicate) actions.append(button('複製 / Duplicate', () => duplicate(index)));
+      actions.append(button('刪除 / Delete', async () => {
           if (!await confirmAction('刪除此項目？', onRemove ?
             '四種語言中的企劃、角色參與記錄與作品企劃連結都會移除；角色、故事與圖片不會刪除。發布前，公開網站不會改變。' :
             '四種語言中的此項目都會移除。發布前，公開網站不會改變。')) return;
@@ -406,7 +524,19 @@ window.AtelierEditor = (() => {
           entry.projectIds = entry.projectIds.filter(id => id !== project.id);
         });
       });
-    }, project => project.kind === kind);
+    }, project => project.kind === kind, false, index => {
+      const id = uid('project');
+      const suffix = { 'zh-Hant': '（副本）', en: ' (copy)', ja: '（コピー）', ko: ' (복사본)' };
+      forLocales((data, code) => {
+        const entry = clone(data.projects[index]);
+        entry.id = id;
+        if (entry.title.trim()) entry.title += suffix[code];
+        data.projects.splice(index + 1, 0, entry);
+        if (data === current()) openEntries.add(entry);
+      });
+      changed();
+      drawWork();
+    });
   }
 
   function drawCharacter() {
@@ -442,7 +572,7 @@ window.AtelierEditor = (() => {
       field(work, '標籤（以逗號分隔）', character.tags.join(', '), value => {
         character.tags = value.split(/[,，]/).map(tag => tag.trim()).filter(Boolean);
       });
-      imageField(work, '角色肖像', character.portrait, shared('portrait'));
+      imageField(work, '角色肖像', character.portrait, shared('portrait'), { crop: true });
       field(work, 'YouTube 影片網址（可留白）', character.youtubeUrl, shared('youtubeUrl'),
         { type: 'url', hint: '支援 YouTube 影片網址或 youtu.be 短網址。' });
       const facts = el('section', 'editor-collection');

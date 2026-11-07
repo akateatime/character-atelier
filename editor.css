@@ -35,6 +35,14 @@
 .editor-draft-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 20px 0; padding: 20px; border: 1px solid var(--gold); border-radius: 12px; background: var(--surface); }
 .editor-confirm { max-width: min(520px, 92vw); }
 .editor-confirm p { color: var(--ink); font-size: 14px; margin: 20px 0; }
+.editor-crop { max-width: min(680px, 94vw); max-height: 94vh; overflow: auto; }
+.editor-crop p { color: var(--ink); font-size: 14px; }
+.editor-crop-stage { position: relative; display: table; max-width: 100%; margin: 16px auto; line-height: 0; overflow: hidden; }
+.editor-crop-stage img { display: block; max-width: 100%; max-height: 45vh; width: auto; height: auto; }
+.editor-crop-selection { position: absolute; box-sizing: border-box; border: 2px solid white; box-shadow: 0 0 0 9999px #0009; cursor: move; touch-action: none; }
+.editor-crop-controls { display: grid; gap: 10px; margin: 16px 0; }
+.editor-crop-controls label { display: grid; grid-template-columns: minmax(110px, auto) 1fr; gap: 12px; align-items: center; }
+.editor-crop-controls input { width: 100%; }
 [aria-busy=true] .editor-work { opacity: .7; }
 @media (max-width: 800px) {
   .editor-tools { grid-template-columns: 1fr; gap: 0; }
