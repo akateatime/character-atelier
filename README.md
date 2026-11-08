@@ -254,13 +254,18 @@ rules and GitHub Pages deep-link 404 errors.
 The static site does not fetch Plurk posts or authenticate to Plurk. To import
 a saved Plurk page, open the studio's **交流創作** section, select a character,
 and expand **從 Plurk 儲存網頁建立交流創作**. Supply the saved HTML file, its
-resource folder, a title, date, and linked characters (use Chrome or Edge for
+resource folder, a title, date, linked characters, and optionally related
+creative projects or TRPG scenarios (use Chrome or Edge for
 the folder picker). The importer takes reply
 text and saved pictures, omits author names and link URLs, and copies the same
 Traditional Chinese content into all four languages (it does not translate).
 Missing resources stop the import; for Plurk images whose full-size file is
 absent, the saved `_tn.jpg` thumbnail is used when available. Check the result
 and edit it as needed. Only import content you have permission to publish.
+You can also select or change related projects when editing an exchange. The
+exchange links back to each project, and the project page lists related
+exchanges with up to six per page. Deleting a project removes its associations
+without deleting exchanges.
 
 On confirmation, cloud mode uploads images to the public Supabase bucket and
 publishes the **entire draft**, including unrelated pending changes. Images
@@ -268,6 +273,10 @@ already uploaded remain public even if a later upload or publication fails.
 The progress bar shows image validation and upload counts separately; reading,
 local storage, and publishing show an indeterminate indicator. Wait for the
 completion message before leaving or starting another import.
+Referenced images are read into memory before validation and upload. If a
+file cannot be read, reselect the HTML and resource folder, and make sure
+the files have not moved or changed; copy cloud-drive or removable-drive
+files locally first if necessary.
 Local debug mode applies the draft to the current browser's preview instead;
 its imported images live in browser storage, are not included in JSON backups,
 and cannot be published from a backup. Reimport the original HTML and folder

@@ -379,7 +379,7 @@ function exchangePage(character, exchange) {
   const article = node('article', 'reader');
   const header = node('header', 'reader-header');
   header.append(node('span', 'eyebrow', exchange.date), node('h1', '', exchange.title),
-    linkedCharacterNav(exchange, 'exchanges'));
+    linkedCharacterNav(exchange, 'exchanges'), projectLinks(exchange));
   const replies = node('ol', 'exchange-replies');
   exchange.replies.forEach(reply => {
     const item = node('li');
@@ -830,7 +830,7 @@ function projectDirectory(kind) {
   main.append(grid);
 }
 
-function projectPage(project, requested = { stories: 1, gallery: 1 }) {
+function projectPage(project, requested = { stories: 1, gallery: 1, exchanges: 1 }) {
   main.append(breadcrumbs([[t(project.kind === 'creative' ? 'Creative Projects' : 'TRPG'), project.kind === 'creative' ? '#/projects' : '#/trpg'], [project.title]]),
     heading(t(project.kind === 'creative' ? 'Creative Projects' : 'TRPG Scenarios'), project.title, project.description));
   if (project.url) {
@@ -852,20 +852,25 @@ function projectPage(project, requested = { stories: 1, gallery: 1 }) {
     });
   }));
   const stories = linkedStoryItems(content.characters, chapter => chapter.projectIds.includes(project.id));
+  const exchanges = content.characters.flatMap(character => character.exchanges
+    .filter(exchange => exchange.projectIds.includes(project.id)).map(exchange => ({ character, exchange })));
   const pageSize = 6;
   const pages = { stories: Math.max(1, Math.ceil(stories.length / pageSize)),
-    gallery: Math.max(1, Math.ceil(pictures.length / pageSize)) };
+    gallery: Math.max(1, Math.ceil(pictures.length / pageSize)),
+    exchanges: Math.max(1, Math.ceil(exchanges.length / pageSize)) };
   const currentPage = { stories: project.kind === 'creative' ? Math.min(requested.stories, pages.stories) : 1,
-    gallery: Math.min(requested.gallery, pages.gallery) };
+    gallery: Math.min(requested.gallery, pages.gallery),
+    exchanges: Math.min(requested.exchanges, pages.exchanges) };
   const pageUrl = (section, number) => {
     const values = { ...currentPage, [section]: number };
     const params = new URLSearchParams();
     if (values.stories > 1 && project.kind === 'creative') params.set('stories', values.stories);
     if (values.gallery > 1) params.set('gallery', values.gallery);
+    if (values.exchanges > 1) params.set('exchanges', values.exchanges);
     const query = params.toString();
     return `#/project/${encodeURIComponent(project.id)}${query ? `?${query}` : ''}`;
   };
-  if (currentPage.stories !== requested.stories || currentPage.gallery !== requested.gallery) {
+  if (currentPage.stories !== requested.stories || currentPage.gallery !== requested.gallery || currentPage.exchanges !== requested.exchanges) {
     history.replaceState(null, '', pageUrl('gallery', currentPage.gallery));
   }
   const paginated = (items, section, render) => {
@@ -873,7 +878,7 @@ function projectPage(project, requested = { stories: 1, gallery: 1 }) {
     const start = (page - 1) * pageSize;
     const visible = items.slice(start, start + pageSize);
     const group = node('section', `project-${section}`);
-    const label = t(section === 'stories' ? 'Stories' : 'Gallery');
+    const label = t(section === 'stories' ? 'Stories' : section === 'exchanges' ? 'Creative exchanges' : 'Gallery');
     group.append(node('h2', '', label), node('p', 'collection-summary',
       t('Showing {start}–{end} of {total} works', {
         start: items.length ? start + 1 : 0, end: start + visible.length, total: items.length
@@ -908,7 +913,7 @@ function projectPage(project, requested = { stories: 1, gallery: 1 }) {
   } else {
     layout.append(paginated(stories, 'stories', storyItems));
   }
-  main.append(layout, paginated(pictures, 'gallery', gallery));
+  main.append(layout, paginated(pictures, 'gallery', gallery), paginated(exchanges, 'exchanges', exchangeList));
 }
 
 function profile(character, tab, requestedPage = 1) {
@@ -1061,10 +1066,10 @@ function route(focus = true) {
   else if (parts.length === 2 && parts[0] === 'project') {
     const project = content.projects.find(project => project.id === parts[1]);
     const params = new URLSearchParams(query);
-    const valid = [...params.keys()].every(key => ['stories', 'gallery'].includes(key) && params.getAll(key).length === 1 &&
+    const valid = [...params.keys()].every(key => ['stories', 'gallery', 'exchanges'].includes(key) && params.getAll(key).length === 1 &&
       /^[1-9]\d*$/.test(params.get(key)) && Number.isSafeInteger(Number(params.get(key))));
     if (project && valid) {
-      projectPage(project, { stories: Number(params.get('stories') || 1), gallery: Number(params.get('gallery') || 1) });
+      projectPage(project, { stories: Number(params.get('stories') || 1), gallery: Number(params.get('gallery') || 1), exchanges: Number(params.get('exchanges') || 1) });
       title = project.title; nav = project.kind === 'creative' ? 'projects' : 'trpg';
     }
     else title = notFound();
@@ -1136,6 +1141,9 @@ function upgradeContent(data) {
     if (character.youtubeUrl === undefined) character.youtubeUrl = '';
     if (character.commissions === undefined) character.commissions = [];
     if (character.exchanges === undefined) character.exchanges = [];
+    character.exchanges.forEach(exchange => {
+      if (exchange.projectIds === undefined) exchange.projectIds = [];
+    });
     (character.gallery || []).forEach((art, index) => {
       if (art.id === undefined) art.id = `art-${character.id}-${index + 1}`;
       if (art.characterIds === undefined) art.characterIds = [character.id];
@@ -1243,6 +1251,7 @@ function validateContent(data, allowIncomplete = false) {
     const exchangeIds = new Set();
     character.exchanges.forEach(exchange => {
       require(exchange && id(exchange.id) && !exchangeIds.has(exchange.id) && text(exchange.title) && text(exchange.date) &&
+        references(exchange.projectIds) &&
         Array.isArray(exchange.replies) && exchange.replies.every(reply => reply && text(reply.text)) &&
         (allowIncomplete || exchange.replies.length > 0),
       `${label} exchange needs a unique ID, title, date, and one or more replies.`);
@@ -1371,7 +1380,7 @@ function validateArchive(payload, { allowIncomplete = false } = {}) {
       about: character.about.length,
       gallery: character.gallery.map(art => [art.id, art.characterIds, art.src, art.date, art.projectIds]),
       commissions: character.commissions.map(commission => [commission.id, commission.characterIds, commission.src, commission.date, commission.artistName, commission.artistUrl]),
-      exchanges: character.exchanges.map(exchange => [exchange.id, exchange.characterIds, exchange.date, exchange.replies.length]),
+      exchanges: character.exchanges.map(exchange => [exchange.id, exchange.characterIds, exchange.date, exchange.projectIds, exchange.replies.length]),
       chapters: character.chapters.map(chapter => [chapter.id, chapter.characterIds, chapter.date, chapter.projectIds, chapter.format,
         chapter.blocks.map(block => [block.type, block.src])]),
       artProjects: character.artProjects.map(entry => [entry.id, entry.url]),

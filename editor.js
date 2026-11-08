@@ -507,6 +507,22 @@ window.AtelierEditor = (() => {
       characters.append(label);
     });
     panel.append(characters);
+    const projectSelections = [];
+    [['creative', '相關創作企劃'], ['trpg', '相關 TRPG 劇本']].forEach(([kind, label]) => {
+      const group = el('fieldset', 'editor-project-checks');
+      group.append(el('legend', '', label));
+      const projects = draft.locales['zh-Hant'].projects.filter(project => project.kind === kind);
+      if (!projects.length) group.append(el('p', 'editor-hint', '此類別尚無企劃，請先到對應編輯區新增。'));
+      projects.forEach(project => {
+        const row = el('label');
+        const input = el('input');
+        input.type = 'checkbox';
+        projectSelections.push([project.id, input]);
+        row.append(input, document.createTextNode(project.title));
+        group.append(row);
+      });
+      panel.append(group);
+    });
     const htmlLabel = el('label', 'editor-field');
     htmlLabel.append(el('span', '', 'Plurk HTML 網頁'));
     const htmlFile = el('input');
@@ -550,8 +566,14 @@ window.AtelierEditor = (() => {
       if (!ids.length) throw new Error('請至少選擇一位關聯角色。');
       showProgress('正在讀取並解析 HTML，請稍候…');
       try {
-        const parsed = window.AtelierExchangeImport.parse(await htmlFile.files[0].text(), [...resources.files]);
-        const exchange = { id: uid('exchange'), characterIds: ids, title: title.value.trim(), date: date.value, replies: parsed.replies.map(text => ({ text })) };
+        const selectedHtml = htmlFile.files[0];
+        let html;
+        try { html = await selectedHtml.text(); }
+        catch (error) {
+          throw new Error(`無法讀取 HTML「${selectedHtml.name}」：${error.message}。請確認檔案未被移動或修改，並重新選擇 HTML 和資源資料夾。`);
+        }
+        const parsed = window.AtelierExchangeImport.parse(html, [...resources.files]);
+        const exchange = { id: uid('exchange'), characterIds: ids, projectIds: projectSelections.filter(([, input]) => input.checked).map(([id]) => id), title: title.value.trim(), date: date.value, replies: parsed.replies.map(text => ({ text })) };
         const next = clone(draft);
         codes.forEach(code => next.locales[code].characters.find(character => character.id === selectedId).exchanges.push(clone(exchange)));
         api.validate(next);
@@ -565,25 +587,36 @@ window.AtelierEditor = (() => {
           return;
         }
         await operation(async () => {
-          message('檢查及儲存圖片中，請稍候…');
-          showProgress(`檢查圖片：0 / ${parsed.files.length}。請勿關閉頁面。`, 0, parsed.files.length);
+          const files = [];
+          showProgress(`讀取圖片：0 / ${parsed.files.length}。請勿移動或修改來源檔案。`, 0, parsed.files.length);
           for (const [index, file] of parsed.files.entries()) {
+            let bytes;
+            try { bytes = await file.arrayBuffer(); }
+            catch (error) {
+              throw new Error(`無法讀取圖片「${file.name}」：${error.message}。請確認檔案仍存在且未被修改，重新選擇 HTML 和資源資料夾後再試。尚未上傳任何圖片或發布作品。`);
+            }
+            files.push(new File([bytes], file.name, { type: file.type, lastModified: file.lastModified }));
+            showProgress(`讀取圖片：${index + 1} / ${parsed.files.length}。請勿移動或修改來源檔案。`, index + 1, parsed.files.length);
+          }
+          message('檢查及儲存圖片中，請稍候…');
+          showProgress(`檢查圖片：0 / ${files.length}。請勿關閉頁面。`, 0, files.length);
+          for (const [index, file] of files.entries()) {
             try { await api.cloud.validateImage(file); }
             catch (error) { throw new Error(`圖片檢查失敗：${error.message} 尚未上傳任何圖片或發布作品。`); }
-            showProgress(`檢查圖片：${index + 1} / ${parsed.files.length}。請勿關閉頁面。`, index + 1, parsed.files.length);
+            showProgress(`檢查圖片：${index + 1} / ${files.length}。請勿關閉頁面。`, index + 1, files.length);
           }
           let paths;
           if (api.cloud.debugMode) {
             showProgress('正在儲存圖片至本機瀏覽器，請勿關閉頁面…');
-            paths = await window.AtelierExchangeImport.saveLocal(parsed.files);
+            paths = await window.AtelierExchangeImport.saveLocal(files);
           }
           else {
             paths = new Map();
-            showProgress(`上傳圖片：0 / ${parsed.files.length}。請勿關閉頁面。`, 0, parsed.files.length);
+            showProgress(`上傳圖片：0 / ${files.length}。請勿關閉頁面。`, 0, files.length);
             try {
-              for (const [index, file] of parsed.files.entries()) {
+              for (const [index, file] of files.entries()) {
                 paths.set(file.name, await api.cloud.upload(file));
-                showProgress(`上傳圖片：${index + 1} / ${parsed.files.length}。請勿關閉頁面。`, index + 1, parsed.files.length);
+                showProgress(`上傳圖片：${index + 1} / ${files.length}。請勿關閉頁面。`, index + 1, files.length);
               }
             } catch (error) {
               throw new Error(`圖片上傳失敗：${error.message}。已上傳的 ${paths.size} 個圖片仍公開存在雲端；作品尚未發布。`);
@@ -677,7 +710,7 @@ window.AtelierEditor = (() => {
       data.characters.forEach(character => {
         character.artProjects = character.artProjects.filter(entry => entry.id !== project.id);
         character.trpgScenarios = character.trpgScenarios.filter(entry => entry.id !== project.id);
-        [...character.gallery, ...character.chapters].forEach(entry => {
+        [...character.gallery, ...character.chapters, ...character.exchanges].forEach(entry => {
           entry.projectIds = entry.projectIds.filter(id => id !== project.id);
         });
       });
@@ -791,6 +824,7 @@ window.AtelierEditor = (() => {
         selectedCharacter(data).exchanges[index].date = value;
       }), { type: 'date', required: true });
       linkedCharacterChecks(card, item, 'exchanges', index);
+      projectChecks(card, item, data => selectedCharacter(data).exchanges[index]);
       card.append(el('p', 'editor-hint', '只匯入取得公開授權的內容。從 Plurk 複製回覆並貼上，在每則回覆之間另起一行輸入 ---。匯入不會連線 Plurk，也不會儲存回覆 ID。'));
       const pasted = field(card, '貼上回覆 / Paste replies', '', () => {}, {
         multiline: true, track: false, hint: '多行回覆可保留原本換行；只有單獨一行的 --- 會分隔回覆。匯入會附加，不會取代既有回覆。'
@@ -831,7 +865,7 @@ window.AtelierEditor = (() => {
         field(replyCard, '回覆內容', reply.text, value => { reply.text = value; }, { multiline: true, required: true });
         replyCard.append(el('p', 'editor-hint', '圖片可使用 [Image: assets/exchange-media/檔名]，貼圖可使用 [Sticker: 檔名]；兩者也可使用已允許的雲端圖片網址。請確認圖片已存在且有展示授權。'));
       }, () => ({ text: '' }));
-    }, () => ({ id: uid('exchange'), characterIds: [selectedId], title: '', date: today(), replies: [] }));
+    }, () => ({ id: uid('exchange'), characterIds: [selectedId], projectIds: [], title: '', date: today(), replies: [] }));
     if (section === 'stories' || section === 'manga') collection(work, section === 'manga' ? '漫畫' : '故事章節', data => selectedCharacter(data).chapters, (card, item, index) => {
       field(card, '章節標題', item.title, value => { item.title = value; }, { required: true });
       field(card, '作者 / 來源', item.credit, value => { item.credit = value; }, { required: true });
