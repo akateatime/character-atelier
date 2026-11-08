@@ -151,13 +151,33 @@ window.AtelierCloud = (() => {
     return src.startsWith(prefix) && /^[a-zA-Z0-9/_-]+\.(png|jpe?g|webp|gif|avif)$/i.test(src.slice(prefix.length));
   }
 
+  async function validateImage(file) {
+    if (!mimeExtensions[file.type] || !file.size || file.size > maximumImageSize) {
+      throw new Error(`圖片「${file.name}」格式不支援、為空或超過 5 MB；請使用 JPG、PNG、WebP、GIF 或 AVIF。`);
+    }
+    try {
+      const bitmap = await createImageBitmap(file);
+      bitmap.close();
+      return;
+    } catch (error) {
+      console.warn(`Bitmap decoding failed for "${file.name}"; trying the browser image decoder.`, error);
+    }
+    const url = URL.createObjectURL(file);
+    try {
+      const picture = new Image();
+      picture.src = url;
+      await picture.decode();
+      if (!picture.naturalWidth || !picture.naturalHeight) throw new Error('圖片尺寸無效。');
+    } catch (error) {
+      throw new Error(`無法解碼圖片「${file.name}」。檔案可能損壞，或不是真正的 ${file.type} 圖片；請檢查原始資源或重新下載。原因：${error.message}`);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
   async function upload(file) {
     const extension = mimeExtensions[file.type];
-    if (!extension || file.size === 0 || file.size > maximumImageSize) {
-      throw new Error('請選擇 5 MB 以下的 JPG、PNG、WebP、GIF 或 AVIF 圖片。不接受 SVG。');
-    }
-    const bitmap = await createImageBitmap(file);
-    bitmap.close();
+    await validateImage(file);
     const user = await owner();
     const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
     await request(`/storage/v1/object/atelier-images/${path}`, {
@@ -168,7 +188,7 @@ window.AtelierCloud = (() => {
   }
 
   return {
-    init, parseConfig, owner, login, logout, read, publish, upload, imageAllowed,
+    init, parseConfig, owner, login, logout, read, publish, upload, imageAllowed, validateImage,
     get configured() { return Boolean(config); },
     get signedIn() { return Boolean(session); },
     get debugMode() { return debugMode; },

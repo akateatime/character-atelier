@@ -521,69 +521,119 @@ window.AtelierEditor = (() => {
     resources.setAttribute('webkitdirectory', '');
     resourceLabel.append(resources);
     panel.append(htmlLabel, resourceLabel);
+    const progressSection = el('div', 'editor-import-progress');
+    progressSection.hidden = true;
+    const progressText = el('p');
+    progressText.setAttribute('role', 'status');
+    progressText.setAttribute('aria-live', 'polite');
+    const progress = el('progress');
+    progress.max = 1;
+    progressSection.append(progressText, progress);
+    panel.append(progressSection);
+    function showProgress(text, completed, total) {
+      progressSection.hidden = false;
+      progress.hidden = false;
+      progressText.textContent = text;
+      progress.setAttribute('aria-label', text);
+      if (total > 0) {
+        progress.max = total;
+        progress.value = completed;
+      } else {
+        progress.removeAttribute('value');
+      }
+    }
     panel.append(button('匯入並更新網站', async () => {
+      progressSection.hidden = true;
       if (!title.value.trim() || !date.value || !htmlFile.files.length) throw new Error('請填寫名稱、日期並選擇 HTML 檔案。');
       if (htmlFile.files[0].size > 20 * 1024 * 1024) throw new Error('HTML 檔案超過 20 MB。');
       const ids = checks.filter(([, input]) => input.checked).map(([id]) => id);
       if (!ids.length) throw new Error('請至少選擇一位關聯角色。');
-      const parsed = window.AtelierExchangeImport.parse(await htmlFile.files[0].text(), [...resources.files]);
-      const exchange = { id: uid('exchange'), characterIds: ids, title: title.value.trim(), date: date.value, replies: parsed.replies.map(text => ({ text })) };
-      const next = clone(draft);
-      codes.forEach(code => next.locales[code].characters.find(character => character.id === selectedId).exchanges.push(clone(exchange)));
-      api.validate(next);
-      if (!api.cloud.debugMode) rejectLocalExchangeMedia(next);
-      const description = api.cloud.debugMode
-        ? `將匯入 ${parsed.replies.length} 則回覆、${parsed.files.length} 個圖片，並套用整份本機草稿預覽。圖片僅存於此瀏覽器；清除瀏覽器資料會遺失圖片。`
-        : `將匯入 ${parsed.replies.length} 則回覆、公開上傳 ${parsed.files.length} 個圖片，並發布整份草稿（包含其他未發布修改）。請確認所有內容皆有公開授權。`;
-      if (!await confirmAction('確認匯入並更新？', description)) return;
-      await operation(async () => {
-        message('檢查及儲存圖片中，請稍候…');
-        for (const file of parsed.files) {
-          const bitmap = await createImageBitmap(file);
-          bitmap.close();
-        }
-        let paths;
-        if (api.cloud.debugMode) paths = await window.AtelierExchangeImport.saveLocal(parsed.files);
-        else {
-          paths = new Map();
-          try {
-            for (const [index, file] of parsed.files.entries()) {
-              message(`圖片上傳中 ${index + 1} / ${parsed.files.length}；上傳後圖片立即公開。`);
-              paths.set(file.name, await api.cloud.upload(file));
-            }
-          } catch (error) {
-            throw new Error(`圖片上傳失敗：${error.message}。已上傳的 ${paths.size} 個圖片仍公開存在雲端；作品尚未發布。`);
-          }
-        }
-        codes.forEach(code => {
-          const saved = next.locales[code].characters.find(character => character.id === selectedId).exchanges.find(item => item.id === exchange.id);
-          saved.replies.forEach(reply => {
-            reply.text = reply.text.replace(/\u0000(Sticker|Image):([^\u0000]+)\u0000/g, (_, kind, name) => `[${kind}: ${paths.get(name)}]`);
-          });
-        });
+      showProgress('正在讀取並解析 HTML，請稍候…');
+      try {
+        const parsed = window.AtelierExchangeImport.parse(await htmlFile.files[0].text(), [...resources.files]);
+        const exchange = { id: uid('exchange'), characterIds: ids, title: title.value.trim(), date: date.value, replies: parsed.replies.map(text => ({ text })) };
+        const next = clone(draft);
+        codes.forEach(code => next.locales[code].characters.find(character => character.id === selectedId).exchanges.push(clone(exchange)));
         api.validate(next);
-        if (api.cloud.debugMode) {
-          draft = next;
-          saveDraft();
-          if (!stored) throw new Error('匯入草稿無法儲存；請下載備份。圖片仍保存在本機瀏覽器。');
-          api.apply(clone(draft), baseVersion);
-          message('匯入完成，已更新本機預覽；圖片只存在此瀏覽器。');
-        } else {
-          let version;
-          try { version = await api.cloud.publish(next, baseVersion); }
-          catch (error) {
-            throw new Error(`發布失敗：${error.message}。已上傳的 ${paths.size} 個圖片仍公開存在雲端；作品尚未發布。`);
-          }
-          draft = next;
-          api.apply(clone(draft), version);
-          baseVersion = version;
-          hasChanges = false;
-          try { localStorage.removeItem(draftKey); }
-          catch (error) { console.warn('已發布，但無法清除本機草稿：', error); }
-          message(`匯入並發布完成！版本 ${version}。`);
+        if (!api.cloud.debugMode) rejectLocalExchangeMedia(next);
+        const description = api.cloud.debugMode
+          ? `將匯入 ${parsed.replies.length} 則回覆、${parsed.files.length} 個圖片，並套用整份本機草稿預覽。圖片僅存於此瀏覽器；清除瀏覽器資料會遺失圖片。`
+          : `將匯入 ${parsed.replies.length} 則回覆、公開上傳 ${parsed.files.length} 個圖片，並發布整份草稿（包含其他未發布修改）。請確認所有內容皆有公開授權。`;
+        showProgress('解析完成，請確認是否開始匯入。');
+        if (!await confirmAction('確認匯入並更新？', description)) {
+          progressSection.hidden = true;
+          return;
         }
-        drawWork();
-      });
+        await operation(async () => {
+          message('檢查及儲存圖片中，請稍候…');
+          showProgress(`檢查圖片：0 / ${parsed.files.length}。請勿關閉頁面。`, 0, parsed.files.length);
+          for (const [index, file] of parsed.files.entries()) {
+            try { await api.cloud.validateImage(file); }
+            catch (error) { throw new Error(`圖片檢查失敗：${error.message} 尚未上傳任何圖片或發布作品。`); }
+            showProgress(`檢查圖片：${index + 1} / ${parsed.files.length}。請勿關閉頁面。`, index + 1, parsed.files.length);
+          }
+          let paths;
+          if (api.cloud.debugMode) {
+            showProgress('正在儲存圖片至本機瀏覽器，請勿關閉頁面…');
+            paths = await window.AtelierExchangeImport.saveLocal(parsed.files);
+          }
+          else {
+            paths = new Map();
+            showProgress(`上傳圖片：0 / ${parsed.files.length}。請勿關閉頁面。`, 0, parsed.files.length);
+            try {
+              for (const [index, file] of parsed.files.entries()) {
+                paths.set(file.name, await api.cloud.upload(file));
+                showProgress(`上傳圖片：${index + 1} / ${parsed.files.length}。請勿關閉頁面。`, index + 1, parsed.files.length);
+              }
+            } catch (error) {
+              throw new Error(`圖片上傳失敗：${error.message}。已上傳的 ${paths.size} 個圖片仍公開存在雲端；作品尚未發布。`);
+            }
+          }
+          codes.forEach(code => {
+            const saved = next.locales[code].characters.find(character => character.id === selectedId).exchanges.find(item => item.id === exchange.id);
+            saved.replies.forEach(reply => {
+              reply.text = reply.text.replace(/\u0000(Sticker|Image):([^\u0000]+)\u0000/g, (_, kind, name) => `[${kind}: ${paths.get(name)}]`);
+            });
+          });
+          showProgress(api.cloud.debugMode ? '正在更新本機預覽，請稍候…' : '圖片已上傳，正在發布網站，請勿關閉頁面…');
+          api.validate(next);
+          if (api.cloud.debugMode) {
+            draft = next;
+            saveDraft();
+            if (!stored) throw new Error('匯入草稿無法儲存；請下載備份。圖片仍保存在本機瀏覽器。');
+            api.apply(clone(draft), baseVersion);
+            message('匯入完成，已更新本機預覽；圖片只存在此瀏覽器。');
+          } else {
+            let version;
+            try { version = await api.cloud.publish(next, baseVersion); }
+            catch (error) {
+              throw new Error(`發布失敗：${error.message}。已上傳的 ${paths.size} 個圖片仍公開存在雲端；作品尚未發布。`);
+            }
+            draft = next;
+            api.apply(clone(draft), version);
+            baseVersion = version;
+            hasChanges = false;
+            try { localStorage.removeItem(draftKey); }
+            catch (error) { console.warn('已發布，但無法清除本機草稿：', error); }
+            message(`匯入並發布完成！版本 ${version}。`);
+          }
+          drawWork();
+          const completedPanel = work.querySelector('.editor-import-progress');
+          completedPanel.hidden = false;
+          completedPanel.closest('details').open = true;
+          const completedText = completedPanel.querySelector('p');
+          const completedBar = completedPanel.querySelector('progress');
+          completedText.textContent = status.textContent;
+          completedBar.setAttribute('aria-label', status.textContent);
+          completedBar.max = 1;
+          completedBar.value = 1;
+        });
+      } catch (error) {
+        progressSection.hidden = false;
+        progress.hidden = true;
+        progressText.textContent = '匯入未完成，請查看上方錯誤訊息後再試。';
+        throw error;
+      }
     }, 'editor-button primary'));
     work.append(panel);
   }

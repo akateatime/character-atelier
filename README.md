@@ -265,6 +265,9 @@ and edit it as needed. Only import content you have permission to publish.
 On confirmation, cloud mode uploads images to the public Supabase bucket and
 publishes the **entire draft**, including unrelated pending changes. Images
 already uploaded remain public even if a later upload or publication fails.
+The progress bar shows image validation and upload counts separately; reading,
+local storage, and publishing show an indeterminate indicator. Wait for the
+completion message before leaving or starting another import.
 Local debug mode applies the draft to the current browser's preview instead;
 its imported images live in browser storage, are not included in JSON backups,
 and cannot be published from a backup. Reimport the original HTML and folder
