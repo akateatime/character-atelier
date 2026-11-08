@@ -1,5 +1,4 @@
 {
-  "supabaseUrl": "",
-  "publishableKey": "",
-  "debugMode": true
+  "supabaseUrl": "https://doumktstixqprtljeusd.supabase.co",
+  "publishableKey": "sb_publishable_IQGss_G1rvIfCOfGUeUdGQ_ZN6o5xpO"
 }
