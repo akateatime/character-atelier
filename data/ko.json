@@ -1,5 +1,8 @@
 {
   "ui": {
+    "Creative exchanges": "교류 창작",
+    "Conversations and collaborative creations between characters.": "캐릭터 사이의 대화와 공동 창작.",
+    "No creative exchanges yet.": "아직 교류 창작이 없습니다.",
     "Filter by characters (match any; none shows all)": "캐릭터로 필터링 (하나라도 일치; 선택하지 않으면 모두 표시)",
     "Records": "세션 기록",
     "No records yet.": "아직 기록이 없습니다.",

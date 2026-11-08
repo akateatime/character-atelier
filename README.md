@@ -17,11 +17,18 @@ the public reader supports all four languages.
   immediately; if an upload fails, earlier successful pages remain in the draft.
 - Character profiles accept an optional HTTPS YouTube video link, displayed
   inline using YouTube's privacy-enhanced embed. Loading or playing it contacts YouTube.
-- Character gallery, stories, manga, and commission tabs show at most six linked
+- Character gallery, stories (including manga), and commission tabs show at most six linked
   works per page, with shareable pagination links.
-- TRPG detail pages show compact participant portraits alongside external records.
-- Gallery, manga, stories and commissions support selecting multiple characters; works
+- Project details show compact participant portraits alongside stories; project
+  stories and galleries each display at most six items per page. TRPG details
+  show portraits alongside external records and also paginate their gallery.
+- Gallery, stories and commissions support selecting multiple characters; works
   linked to any selected character match. Select none to show all works.
+- Creative exchanges store an ordered, editable series of replies and can be
+  linked to multiple characters. Import pasted text or a UTF-8 `.txt` file,
+  using a line containing only `---` between replies; this preserves line
+  breaks within a reply. Import appends replies to the active content language;
+  fill or translate the other languages before publication.
 - Project and TRPG entries can be duplicated as templates, including their
   translated fields and record links, without copying character or work links.
 - When uploading a character portrait, choose a square crop by dragging or
@@ -242,6 +249,52 @@ Edit the `:root` and `:root[data-theme="dark"]` variables in
 Append these to your published site URL. Hash routing avoids server rewrite
 rules and GitHub Pages deep-link 404 errors.
 
+## Importing a Plurk conversation
+
+The static site does not fetch Plurk posts or authenticate to Plurk. To import
+a saved Plurk page, open the studio's **交流創作** section, select a character,
+and expand **從 Plurk 儲存網頁建立交流創作**. Supply the saved HTML file, its
+resource folder, a title, date, and linked characters (use Chrome or Edge for
+the folder picker). The importer takes reply
+text and saved pictures, omits author names and link URLs, and copies the same
+Traditional Chinese content into all four languages (it does not translate).
+Missing resources stop the import; for Plurk images whose full-size file is
+absent, the saved `_tn.jpg` thumbnail is used when available. Check the result
+and edit it as needed. Only import content you have permission to publish.
+
+On confirmation, cloud mode uploads images to the public Supabase bucket and
+publishes the **entire draft**, including unrelated pending changes. Images
+already uploaded remain public even if a later upload or publication fails.
+Local debug mode applies the draft to the current browser's preview instead;
+its imported images live in browser storage, are not included in JSON backups,
+and cannot be published from a backup. Reimport the original HTML and folder
+in cloud mode to publish. Clearing browser data deletes local preview images.
+
+For manual text import, open the
+conversation in Plurk using an account authorized to see it, copy the replies
+you have permission to publish, and paste them into the studio's **交流創作**
+section. Separate each reply with a line containing only `---`, then select
+**匯入回覆**. A local UTF-8 text file in the same format can also be loaded.
+Check the imported text and ordering; add, edit, delete, or reorder individual
+replies as needed. Neither import retains Plurk reply IDs or automatically
+attribute speakers. Only import and publish material with permission from its
+creators; publication makes the content public.
+
+Replies can include `[Sticker: filename.png]` for an inline sticker and
+`[Image: assets/exchange-media/filename.png]` for a larger picture. Put these
+files in `assets/exchange-media` and deploy that directory with the site.
+Alternatively, an Image or Sticker marker may contain a public image URL from the
+configured Supabase image bucket. Supported local formats are PNG, GIF, JPEG,
+and WebP; filenames may contain letters, numbers, underscores, and hyphens.
+Missing or unsupported images remain visible as their original markers. Reply
+text and markers remain editable in the studio; author labels are not added
+automatically. Only deploy media you have permission to display.
+
+Plurk's [API documentation](https://www.plurk.com/API) describes OAuth 1.0a
+signed requests. Direct URL import would require a separately configured Plurk
+app and secure server-side authorization; no Plurk credentials are stored in
+this site.
+
 ## Relationships
 
 The **關係圖 / Relationships** page displays all characters. Each profile also
@@ -368,13 +421,14 @@ the chapter translation pattern. Empty commission lists need no pack entries.
 
 ## Paginated artwork and story directories
 
-The global Stories, Gallery and Manga directories show 10 works per page with
+The global Stories and Gallery directories show 10 works per page with
 Previous/Next links, visible ranges and page counts. Page URLs such as
-`#/stories/page/2`, `#/gallery/page/2` and `#/manga/page/2` can be bookmarked;
+`#/stories/page/2` and `#/gallery/page/2` can be bookmarked;
 browser Back/Forward and language switching preserve the page. Out-of-range
-pages move to the last available page. Existing ordering and story-format
-filtering are unchanged. Profile/project lists and chapter readers remain
-unpaginated. These directories use a lightweight exhibition-catalogue design
+pages move to the last available page. Stories include manga and illustrated
+chapters; old manga directory links redirect to the first story page. Character
+tabs and project story/gallery lists show up to six items per page; chapter
+readers remain unpaginated. These directories use a lightweight exhibition-catalogue design
 with story cover thumbnails and framed gallery works, without animation loops.
 
 ## Relationship map zoom
@@ -406,6 +460,8 @@ participating characters and all explicitly linked artworks and chapters,
 including illustrated stories and manga. Images inside linked illustrated/manga
 chapters also appear in the project gallery; their image dialogs link back to the
 chapter. Other works are not included just because their character participates.
+Story and gallery pagination are independent and both page numbers are retained
+in the project URL. The TRPG gallery is paginated too.
 Both works and profiles link
 back to the project. Removing participation does not remove a work's project link.
 Deleting a shared project removes its participation/references in every language,
@@ -418,8 +474,8 @@ The **閱讀格式** selector offers text, illustrated, and manga chapters:
   **新增文字區塊**, and images with the block list's **新增** button.
 - Manga chapters contain ordered image pages in a continuous vertical reader.
   Add/upload pages individually; arrows reorder and Delete removes a page.
-  Alt text is required; captions are optional. Both the global **漫畫** section
-  and profile Manga tab list manga chapters.
+  Alt text is required; captions are optional. The global and character story
+  pages list manga chapters; the studio retains its separate manga editing section.
 - Each image block uses the existing 5 MiB raster upload control. Images and
   block order synchronize across languages; prose, alt text and captions are
   translated individually. Fill blank translations before publishing.

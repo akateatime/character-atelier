@@ -1,5 +1,8 @@
 {
   "ui": {
+    "Creative exchanges": "交流創作",
+    "Conversations and collaborative creations between characters.": "キャラクター同士の会話と共同創作。",
+    "No creative exchanges yet.": "交流創作はまだありません。",
     "Filter by characters (match any; none shows all)": "キャラクターで絞り込み（いずれかに一致・未選択ですべて表示）",
     "Records": "セッション記録",
     "No records yet.": "記録はまだありません。",

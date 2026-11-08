@@ -7,7 +7,7 @@ let language = 'zh-Hant';
 let catalogues;
 let translationsReady = false;
 let cloudVersion = 0;
-const collectionFilters = { gallery: new Set(), manga: new Set(), stories: new Set(), commissions: new Set() };
+const collectionFilters = { gallery: new Set(), stories: new Set(), commissions: new Set(), exchanges: new Set() };
 const cloud = window.AtelierCloud;
 const languageControl = document.querySelector('#language');
 const supportedLanguages = ['en', 'zh-Hant', 'ja', 'ko'];
@@ -45,7 +45,7 @@ function translateShell() {
   document.querySelector('.site-header .brand').setAttribute('aria-label', t('Character Atelier home'));
   document.querySelector('.site-header nav').setAttribute('aria-label', t('Main navigation'));
   document.querySelectorAll('[data-nav]').forEach(item => {
-    item.textContent = t({ home: 'Discover', characters: 'Characters', relationships: 'Relationships', gallery: 'Gallery', stories: 'Stories', projects: 'Creative Projects', trpg: 'TRPG', manga: 'Manga', commissions: 'Commissions' }[item.dataset.nav]);
+    item.textContent = t({ home: 'Discover', characters: 'Characters', relationships: 'Relationships', gallery: 'Gallery', stories: 'Stories', exchanges: 'Creative exchanges', projects: 'Creative Projects', trpg: 'TRPG', commissions: 'Commissions' }[item.dataset.nav]);
   });
   document.querySelector('.header-note').textContent = t('An original character archive');
   document.querySelector('footer p').textContent = t('A home for characters. A place for their stories.');
@@ -212,13 +212,13 @@ function storyItems(items, covers = false) {
 
 function collectionPage(kind, requestedPage) {
   const pageSize = 10;
-  const allItems = kind === 'commissions' ? content.characters.flatMap(character => character.commissions.map(commission => ({ character, commission }))) :
+  const allItems = kind === 'exchanges' ? content.characters.flatMap(character => character.exchanges.map(exchange => ({ character, exchange }))) :
+    kind === 'commissions' ? content.characters.flatMap(character => character.commissions.map(commission => ({ character, commission }))) :
     kind === 'gallery' ? allArtwork() :
-    content.characters.flatMap(character => character.chapters.map((chapter, index) => ({ character, chapter, index })))
-      .filter(({ chapter }) => kind !== 'manga' || chapter.format === 'manga');
+    content.characters.flatMap(character => character.chapters.map((chapter, index) => ({ character, chapter, index })));
   const selected = collectionFilters[kind];
   const items = selected && selected.size ? allItems.filter(entry =>
-    (entry.art || entry.chapter || entry.commission).characterIds.some(id => selected.has(id))) : allItems;
+    (entry.art || entry.chapter || entry.commission || entry.exchange).characterIds.some(id => selected.has(id))) : allItems;
   const pages = Math.max(1, Math.ceil(items.length / pageSize));
   const page = Math.min(requestedPage, pages);
   const pageUrl = number => `#/${kind}${number === 1 ? '' : `/page/${number}`}`;
@@ -226,9 +226,10 @@ function collectionPage(kind, requestedPage) {
   const start = (page - 1) * pageSize;
   const visible = items.slice(start, start + pageSize);
   main.classList.add('collection-view', `collection-${kind}`);
-  const titles = { stories: 'Stories worth staying for', gallery: 'Collected moments', manga: 'Manga', commissions: 'Commissions' };
+  const titles = { stories: 'Stories worth staying for', gallery: 'Collected moments', commissions: 'Commissions', exchanges: 'Creative exchanges' };
   main.append(heading(t(kind === 'gallery' ? 'The art wall' : 'The storybook'), t(titles[kind]),
-    t(kind === 'commissions' ? 'Characters through the eyes and words of other artists.' :
+    t(kind === 'exchanges' ? 'Conversations and collaborative creations between characters.' :
+      kind === 'commissions' ? 'Characters through the eyes and words of other artists.' :
       kind === 'gallery' ? 'Portraits, places, and little glimpses into their lives.' : 'Choose a chapter and wander into another world.')));
   if (selected) {
     const filters = node('fieldset', 'collection-character-filters');
@@ -257,13 +258,13 @@ function collectionPage(kind, requestedPage) {
   const summary = node('p', 'collection-summary', t('Showing {start}–{end} of {total} works', {
     start: items.length ? start + 1 : 0, end: start + visible.length, total: items.length
   }));
-  main.append(summary, kind === 'commissions' ? commissionList(visible) : kind === 'gallery' ? gallery(visible) : storyItems(visible, true));
+  main.append(summary, kind === 'exchanges' ? exchangeList(visible) : kind === 'commissions' ? commissionList(visible) : kind === 'gallery' ? gallery(visible) : storyItems(visible, true));
   main.append(paginationControls(page, pages, pageUrl));
 }
 
-function paginationControls(page, pages, pageUrl) {
+function paginationControls(page, pages, pageUrl, label = '') {
   const pagination = node('nav', 'pagination');
-  pagination.setAttribute('aria-label', t('Pagination'));
+  pagination.setAttribute('aria-label', label ? `${label} · ${t('Pagination')}` : t('Pagination'));
   const control = (label, number, enabled) => {
     const element = enabled ? link(t(label), pageUrl(number), 'page-control') : node('span', 'page-control', t(label));
     if (!enabled) element.setAttribute('aria-disabled', 'true');
@@ -317,6 +318,75 @@ function commissionPage(character, commission) {
     article.append(figure);
   }
   if (commission.text) article.append(node('div', 'prose commission-prose', commission.text));
+  main.append(article);
+}
+
+function exchangeList(items) {
+  const list = node('div', 'story-list');
+  items.forEach(({ character, exchange }) => {
+    const row = link('', `#/exchange/${encodeURIComponent(character.id)}/${encodeURIComponent(exchange.id)}`, 'story-row');
+    const details = node('div');
+    details.append(node('h3', '', exchange.title),
+      node('p', '', `${linkedCharacterNames(exchange)} · ${exchange.date}`),
+      linkedCharacterAvatars(exchange));
+    row.append(details, node('span', 'arrow', '→'));
+    list.append(row);
+  });
+  if (!items.length) list.append(node('p', 'empty', t('No creative exchanges yet.')));
+  return list;
+}
+
+function exchangeReplyText(text) {
+  const result = node('div', 'exchange-reply-text');
+  const tokens = /\[(Sticker|Image): ([^\]\r\n]+)\]/g;
+  let position = 0;
+  for (const match of text.matchAll(tokens)) {
+    result.append(document.createTextNode(text.slice(position, match.index)));
+    const [, kind, value] = match;
+    let src;
+    if (kind === 'Sticker' && /^[A-Za-z0-9_-]+\.(?:png|gif|jpe?g|webp)$/i.test(value)) {
+      src = `assets/exchange-media/${value}`;
+    } else if (
+      (/^assets\/exchange-media\/[A-Za-z0-9_-]+\.(?:png|gif|jpe?g|webp)$/i.test(value) || cloud.imageAllowed(value))) {
+      src = value;
+    } else if (cloud.debugMode && /^local-exchange-media\/[a-f0-9-]{36}$/.test(value)) {
+      const placeholder = node('span', '', match[0]);
+      result.append(placeholder);
+      window.AtelierExchangeImport.loadLocal(value).then(blob => {
+        if (!blob) throw new Error(`Local exchange image missing: ${value}`);
+        const url = URL.createObjectURL(blob);
+        const picture = image(url, kind === 'Sticker' ? 'Sticker' : 'Image', kind === 'Sticker' ? 'exchange-sticker' : 'exchange-image');
+        picture.addEventListener('load', () => URL.revokeObjectURL(url), { once: true });
+        picture.addEventListener('error', () => { URL.revokeObjectURL(url); picture.replaceWith(document.createTextNode(match[0])); }, { once: true });
+        placeholder.replaceWith(picture);
+      }).catch(error => console.error('Cannot load local exchange image:', error));
+    }
+    if (src) {
+      const picture = image(src, kind === 'Sticker' ? 'Sticker' : 'Image', kind === 'Sticker' ? 'exchange-sticker' : 'exchange-image');
+      picture.addEventListener('error', () => picture.replaceWith(document.createTextNode(match[0])), { once: true });
+      result.append(picture);
+    } else if (!cloud.debugMode || !/^local-exchange-media\/[a-f0-9-]{36}$/.test(value)) {
+      result.append(document.createTextNode(match[0]));
+    }
+    position = match.index + match[0].length;
+  }
+  result.append(document.createTextNode(text.slice(position)));
+  return result;
+}
+
+function exchangePage(character, exchange) {
+  main.append(breadcrumbs([[t('Creative exchanges'), '#/exchanges'], [character.name, characterUrl(character, 'exchanges')], [exchange.title]]));
+  const article = node('article', 'reader');
+  const header = node('header', 'reader-header');
+  header.append(node('span', 'eyebrow', exchange.date), node('h1', '', exchange.title),
+    linkedCharacterNav(exchange, 'exchanges'));
+  const replies = node('ol', 'exchange-replies');
+  exchange.replies.forEach(reply => {
+    const item = node('li');
+    item.append(exchangeReplyText(reply.text));
+    replies.append(item);
+  });
+  article.append(header, replies);
   main.append(article);
 }
 
@@ -449,8 +519,7 @@ function characterLinks(character) {
   const links = node('nav', 'character-links');
   links.setAttribute('aria-label', t('Explore {name}', { name: character.name }));
   links.append(link(t('Chapters'), characterUrl(character, 'stories'), 'text-link'),
-    link(t('Gallery'), characterUrl(character, 'gallery'), 'text-link'),
-    link(t('Manga'), characterUrl(character, 'manga'), 'text-link'));
+    link(t('Gallery'), characterUrl(character, 'gallery'), 'text-link'));
   return links;
 }
 
@@ -761,7 +830,7 @@ function projectDirectory(kind) {
   main.append(grid);
 }
 
-function projectPage(project) {
+function projectPage(project, requested = { stories: 1, gallery: 1 }) {
   main.append(breadcrumbs([[t(project.kind === 'creative' ? 'Creative Projects' : 'TRPG'), project.kind === 'creative' ? '#/projects' : '#/trpg'], [project.title]]),
     heading(t(project.kind === 'creative' ? 'Creative Projects' : 'TRPG Scenarios'), project.title, project.description));
   if (project.url) {
@@ -782,17 +851,47 @@ function projectPage(project) {
       });
     });
   }));
+  const stories = linkedStoryItems(content.characters, chapter => chapter.projectIds.includes(project.id));
+  const pageSize = 6;
+  const pages = { stories: Math.max(1, Math.ceil(stories.length / pageSize)),
+    gallery: Math.max(1, Math.ceil(pictures.length / pageSize)) };
+  const currentPage = { stories: project.kind === 'creative' ? Math.min(requested.stories, pages.stories) : 1,
+    gallery: Math.min(requested.gallery, pages.gallery) };
+  const pageUrl = (section, number) => {
+    const values = { ...currentPage, [section]: number };
+    const params = new URLSearchParams();
+    if (values.stories > 1 && project.kind === 'creative') params.set('stories', values.stories);
+    if (values.gallery > 1) params.set('gallery', values.gallery);
+    const query = params.toString();
+    return `#/project/${encodeURIComponent(project.id)}${query ? `?${query}` : ''}`;
+  };
+  if (currentPage.stories !== requested.stories || currentPage.gallery !== requested.gallery) {
+    history.replaceState(null, '', pageUrl('gallery', currentPage.gallery));
+  }
+  const paginated = (items, section, render) => {
+    const page = currentPage[section];
+    const start = (page - 1) * pageSize;
+    const visible = items.slice(start, start + pageSize);
+    const group = node('section', `project-${section}`);
+    const label = t(section === 'stories' ? 'Stories' : 'Gallery');
+    group.append(node('h2', '', label), node('p', 'collection-summary',
+      t('Showing {start}–{end} of {total} works', {
+        start: items.length ? start + 1 : 0, end: start + visible.length, total: items.length
+      })), render(visible), paginationControls(page, pages[section], number => pageUrl(section, number), label));
+    return group;
+  };
+  const layout = node('div', 'trpg-overview');
+  const people = node('section', 'trpg-participants');
+  const icons = node('div', 'trpg-participant-list');
+  participants.forEach(character => {
+    const item = link('', characterUrl(character), 'trpg-participant');
+    item.append(image(character.portrait, '', 'trpg-participant-avatar'), node('span', '', character.name));
+    icons.append(item);
+  });
+  if (!participants.length) icons.append(node('p', 'empty', t('No participants yet.')));
+  people.append(node('h2', '', t('Participating characters')), icons);
+  layout.append(people);
   if (project.kind === 'trpg') {
-    const layout = node('div', 'trpg-overview');
-    const people = node('section', 'trpg-participants');
-    const icons = node('div', 'trpg-participant-list');
-    participants.forEach(character => {
-      const item = link('', characterUrl(character), 'trpg-participant');
-      item.append(image(character.portrait, '', 'trpg-participant-avatar'), node('span', '', character.name));
-      icons.append(item);
-    });
-    if (!participants.length) icons.append(node('p', 'empty', t('No participants yet.')));
-    people.append(node('h2', '', t('Participating characters')), icons);
     const recordSection = node('section', 'trpg-record-section');
     const records = node('ul', 'trpg-records');
     project.records.forEach(record => {
@@ -805,16 +904,11 @@ function projectPage(project) {
     });
     if (!project.records.length) records.append(node('li', '', t('No records yet.')));
     recordSection.append(node('h2', '', t('Records')), records);
-    layout.append(people, recordSection);
-    main.append(layout);
+    layout.append(recordSection);
   } else {
-    const grid = node('div', 'grid');
-    participants.forEach(character => grid.append(characterCard(character)));
-    if (!participants.length) grid.append(node('p', 'empty', t('No participants yet.')));
-    main.append(node('h2', '', t('Participating characters')), grid,
-      node('h2', '', t('Stories')), storyList(content.characters, chapter => chapter.projectIds.includes(project.id)));
+    layout.append(paginated(stories, 'stories', storyItems));
   }
-  main.append(node('h2', '', t('Gallery')), gallery(pictures));
+  main.append(layout, paginated(pictures, 'gallery', gallery));
 }
 
 function profile(character, tab, requestedPage = 1) {
@@ -833,7 +927,7 @@ function profile(character, tab, requestedPage = 1) {
   const body = node('section');
   const tabs = node('nav', 'tabs');
   tabs.setAttribute('aria-label', t('Character sections'));
-  [['about', 'About'], ['gallery', 'Gallery'], ['stories', 'Chapters'], ['manga', 'Manga'], ['commissions', 'Commissions']].forEach(([id, label]) => {
+  [['about', 'About'], ['gallery', 'Gallery'], ['stories', 'Chapters'], ['exchanges', 'Creative exchanges'], ['commissions', 'Commissions']].forEach(([id, label]) => {
     const item = link(t(label), characterUrl(character, id));
     if (tab === id) item.setAttribute('aria-current', 'page');
     tabs.append(item);
@@ -855,11 +949,13 @@ function profile(character, tab, requestedPage = 1) {
     }
     body.append(participation(character));
   } else {
-    const items = tab === 'gallery' ? allArtwork().filter(({ art }) => art.characterIds.includes(character.id)) :
+    const items = tab === 'exchanges' ? content.characters.flatMap(owner => owner.exchanges
+      .filter(exchange => exchange.characterIds.includes(character.id)).map(exchange => ({ character: owner, exchange }))) :
+      tab === 'gallery' ? allArtwork().filter(({ art }) => art.characterIds.includes(character.id)) :
       tab === 'commissions' ? content.characters.flatMap(owner => owner.commissions
       .filter(commission => commission.characterIds.includes(character.id))
       .map(commission => ({ character: owner, commission }))) :
-      linkedStoryItems([character], chapter => tab !== 'manga' || chapter.format === 'manga');
+      linkedStoryItems([character]);
     const pageSize = 6;
     const pages = Math.max(1, Math.ceil(items.length / pageSize));
     const page = Math.min(requestedPage, pages);
@@ -867,11 +963,11 @@ function profile(character, tab, requestedPage = 1) {
     if (page !== requestedPage) history.replaceState(null, '', pageUrl(page));
     const start = (page - 1) * pageSize;
     const visible = items.slice(start, start + pageSize);
-    if (tab !== 'gallery') body.append(node('h2', '', t(tab === 'commissions' ? 'Commissions' : tab === 'manga' ? 'Manga' : 'The story so far')));
+    if (tab !== 'gallery') body.append(node('h2', '', t(tab === 'exchanges' ? 'Creative exchanges' : tab === 'commissions' ? 'Commissions' : 'The story so far')));
     body.append(node('p', 'collection-summary', t('Showing {start}–{end} of {total} works', {
       start: items.length ? start + 1 : 0, end: start + visible.length, total: items.length
     })));
-    body.append(tab === 'gallery' ? gallery(visible) : tab === 'commissions' ? commissionList(visible) : storyItems(visible),
+    body.append(tab === 'exchanges' ? exchangeList(visible) : tab === 'gallery' ? gallery(visible) : tab === 'commissions' ? commissionList(visible) : storyItems(visible),
       paginationControls(page, pages, pageUrl));
   }
   layout.append(sidebar, body);
@@ -890,7 +986,7 @@ function reader(character, chapter) {
   const header = node('header', 'reader-header');
   header.append(node('span', 'eyebrow', `${linkedCharacterNames(chapter)} · ${t('Chapter {number}', { number: index + 1 })}`),
     node('h1', '', chapter.title), node('span', 'tiny', `${chapter.date} · ${chapter.credit}`));
-  header.append(linkedCharacterNav(chapter, chapter.format === 'manga' ? 'manga' : 'stories'));
+  header.append(linkedCharacterNav(chapter, 'stories'));
   const prose = node('div', 'prose');
   chapter.paragraphs.forEach(paragraph => prose.append(node('p', '', paragraph)));
   chapter.blocks.forEach(block => {
@@ -929,10 +1025,14 @@ function route(focus = true) {
   languageControl.disabled = location.hash === '#/admin';
   if (activeDialog) activeDialog.close();
   main.replaceChildren();
-  main.classList.remove('collection-view', 'collection-stories', 'collection-gallery', 'collection-manga', 'collection-commissions');
+  main.classList.remove('collection-view', 'collection-stories', 'collection-gallery', 'collection-manga', 'collection-commissions', 'collection-exchanges');
   let parts;
+  let query;
   try {
-    parts = (location.hash.slice(1) || '/').split('/').filter(Boolean).map(decodeURIComponent);
+    const hash = location.hash.slice(1) || '/';
+    const queryIndex = hash.indexOf('?');
+    query = queryIndex < 0 ? '' : hash.slice(queryIndex + 1);
+    parts = (queryIndex < 0 ? hash : hash.slice(0, queryIndex)).split('/').filter(Boolean).map(decodeURIComponent);
   } catch (error) {
     if (!(error instanceof URIError)) throw error;
     parts = ['invalid-route'];
@@ -960,13 +1060,22 @@ function route(focus = true) {
   else if (parts.length === 1 && parts[0] === 'trpg') { projectDirectory('trpg'); title = t('TRPG'); }
   else if (parts.length === 2 && parts[0] === 'project') {
     const project = content.projects.find(project => project.id === parts[1]);
-    if (project) { projectPage(project); title = project.title; nav = project.kind === 'creative' ? 'projects' : 'trpg'; }
+    const params = new URLSearchParams(query);
+    const valid = [...params.keys()].every(key => ['stories', 'gallery'].includes(key) && params.getAll(key).length === 1 &&
+      /^[1-9]\d*$/.test(params.get(key)) && Number.isSafeInteger(Number(params.get(key))));
+    if (project && valid) {
+      projectPage(project, { stories: Number(params.get('stories') || 1), gallery: Number(params.get('gallery') || 1) });
+      title = project.title; nav = project.kind === 'creative' ? 'projects' : 'trpg';
+    }
     else title = notFound();
   }
-  else if (['stories', 'gallery', 'manga', 'commissions'].includes(parts[0]) &&
+  else if (['stories', 'gallery', 'manga', 'commissions', 'exchanges'].includes(parts[0]) &&
       (parts.length === 1 || (parts.length === 3 && parts[1] === 'page' && /^[1-9]\d*$/.test(parts[2]) && Number.isSafeInteger(Number(parts[2]))))) {
-    collectionPage(parts[0], parts.length === 1 ? 1 : Number(parts[2]));
-    title = t({ stories: 'Stories', gallery: 'Gallery', manga: 'Manga', commissions: 'Commissions' }[parts[0]]);
+    const kind = parts[0] === 'manga' ? 'stories' : parts[0];
+    if (parts[0] === 'manga') history.replaceState(null, '', '#/stories');
+    collectionPage(kind, parts[0] === 'manga' || parts.length === 1 ? 1 : Number(parts[2]));
+    title = t({ stories: 'Stories', gallery: 'Gallery', commissions: 'Commissions', exchanges: 'Creative exchanges' }[kind]);
+    nav = kind;
   }
   else if (parts.length === 1 && parts[0] === 'relationships') {
     main.append(heading(t('Threads of fate'), t('Relationships'), t('Every meeting leaves a thread. Follow it into their worlds.')), relationshipDiagram());
@@ -975,12 +1084,19 @@ function route(focus = true) {
   else if (parts[0] === 'character' && (parts.length === 2 || parts.length === 3 ||
       (parts.length === 5 && parts[3] === 'page' && /^[1-9]\d*$/.test(parts[4]) && Number.isSafeInteger(Number(parts[4]))))) {
     const character = content.characters.find(item => item.id === parts[1]);
-    const tab = parts[2] || 'about';
-    if (character && ['about', 'gallery', 'stories', 'manga', 'commissions'].includes(tab) &&
+    const oldManga = parts[2] === 'manga';
+    const tab = oldManga ? 'stories' : parts[2] || 'about';
+    if (character && ['about', 'gallery', 'stories', 'commissions', 'exchanges'].includes(tab) &&
         (parts.length !== 5 || tab !== 'about')) {
-      profile(character, tab, parts.length === 5 ? Number(parts[4]) : 1);
+      if (oldManga) history.replaceState(null, '', characterUrl(character, 'stories'));
+      profile(character, tab, !oldManga && parts.length === 5 ? Number(parts[4]) : 1);
       title = character.name; nav = 'characters';
     }
+    else title = notFound();
+  } else if (parts[0] === 'exchange' && parts.length === 3) {
+    const character = content.characters.find(item => item.id === parts[1]);
+    const exchange = character?.exchanges.find(item => item.id === parts[2]);
+    if (exchange) { exchangePage(character, exchange); title = exchange.title; nav = 'exchanges'; }
     else title = notFound();
   } else if (parts[0] === 'commission' && parts.length === 3) {
     const character = content.characters.find(item => item.id === parts[1]);
@@ -1019,6 +1135,7 @@ function upgradeContent(data) {
   data.characters.forEach(character => {
     if (character.youtubeUrl === undefined) character.youtubeUrl = '';
     if (character.commissions === undefined) character.commissions = [];
+    if (character.exchanges === undefined) character.exchanges = [];
     (character.gallery || []).forEach((art, index) => {
       if (art.id === undefined) art.id = `art-${character.id}-${index + 1}`;
       if (art.characterIds === undefined) art.characterIds = [character.id];
@@ -1122,6 +1239,15 @@ function validateContent(data, allowIncomplete = false) {
       `${label} commission needs a unique ID, title, date, image with description or written work, and an optional HTTPS artist URL.`);
       commissionIds.add(commission.id);
     });
+    require(Array.isArray(character.exchanges), `${label} exchanges must be an array.`);
+    const exchangeIds = new Set();
+    character.exchanges.forEach(exchange => {
+      require(exchange && id(exchange.id) && !exchangeIds.has(exchange.id) && text(exchange.title) && text(exchange.date) &&
+        Array.isArray(exchange.replies) && exchange.replies.every(reply => reply && text(reply.text)) &&
+        (allowIncomplete || exchange.replies.length > 0),
+      `${label} exchange needs a unique ID, title, date, and one or more replies.`);
+      exchangeIds.add(exchange.id);
+    });
     require(Array.isArray(character.chapters), `${label} chapters must be an array.`);
     const chapterIds = new Set();
     character.chapters.forEach(chapter => {
@@ -1141,7 +1267,7 @@ function validateContent(data, allowIncomplete = false) {
   const linkedCharactersValid = values => Array.isArray(values) && values.length > 0 &&
     values.every(value => ids.has(value)) && new Set(values).size === values.length;
   data.characters.forEach(character => {
-    ['gallery', 'chapters', 'commissions'].forEach(key => character[key].forEach(entry => {
+    ['gallery', 'chapters', 'commissions', 'exchanges'].forEach(key => character[key].forEach(entry => {
       require(linkedCharactersValid(entry.characterIds),
         `${character.id} ${key} items must link to one or more distinct existing characters.`);
     }));
@@ -1200,6 +1326,12 @@ function localizedContent(base, pack) {
         commissions: character.commissions.map(commission => ({
           ...commission, ...fields(local.commissions?.[commission.id], ['title', 'alt', 'text'])
         })),
+        exchanges: character.exchanges.map(exchange => ({
+          ...exchange, ...fields(local.exchanges?.[exchange.id], ['title']),
+          replies: exchange.replies.map((reply, index) => ({
+            ...reply, ...fields(local.exchanges?.[exchange.id]?.replies?.[index], ['text'])
+          }))
+        })),
         chapters: character.chapters.map(chapter => ({
           ...chapter, ...fields(local.chapters[chapter.id], ['title', 'credit', 'paragraphs']),
           blocks: chapter.blocks.map((block, index) => ({
@@ -1239,6 +1371,7 @@ function validateArchive(payload, { allowIncomplete = false } = {}) {
       about: character.about.length,
       gallery: character.gallery.map(art => [art.id, art.characterIds, art.src, art.date, art.projectIds]),
       commissions: character.commissions.map(commission => [commission.id, commission.characterIds, commission.src, commission.date, commission.artistName, commission.artistUrl]),
+      exchanges: character.exchanges.map(exchange => [exchange.id, exchange.characterIds, exchange.date, exchange.replies.length]),
       chapters: character.chapters.map(chapter => [chapter.id, chapter.characterIds, chapter.date, chapter.projectIds, chapter.format,
         chapter.blocks.map(block => [block.type, block.src])]),
       artProjects: character.artProjects.map(entry => [entry.id, entry.url]),

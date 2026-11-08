@@ -99,6 +99,13 @@ window.AtelierEditor = (() => {
 
   function changed() { saveDraft(); }
 
+  function rejectLocalExchangeMedia(payload) {
+    const hasLocal = codes.some(code => payload.locales[code].characters.some(character =>
+      character.exchanges.some(exchange => exchange.replies.some(reply =>
+        /\[(?:Sticker|Image): local-exchange-media\/[a-f0-9-]{36}\]/.test(reply.text)))));
+    if (hasLocal) throw new Error('草稿包含僅存在本機的交流圖片，不能發布。請在雲端管理室重新匯入原始網頁及資源。');
+  }
+
   function field(parent, label, value, update, { multiline = false, type = 'text', required = false, hint = '', track = true } = {}) {
     const wrapper = el('label', 'editor-field');
     wrapper.append(el('span', '', label));
@@ -481,6 +488,106 @@ window.AtelierEditor = (() => {
     });
   }
 
+  function plurkImportForm() {
+    const panel = el('details', 'editor-collection');
+    panel.append(el('summary', '', '從 Plurk 儲存網頁建立交流創作'));
+    panel.append(el('p', 'editor-hint', '選擇完整儲存的 HTML 和對應的資源資料夾（建議使用 Chrome 或 Edge）。只匯入回覆內容，連結保留文字但不顯示網址；繁體中文內容會複製到所有語言，並非自動翻譯。請先取得公開授權。'));
+    const title = field(panel, '交流創作名稱', '', () => {}, { track: false });
+    const date = field(panel, '日期', today(), () => {}, { type: 'date', track: false });
+    const characters = el('fieldset', 'editor-project-checks');
+    characters.append(el('legend', '', '關聯角色'));
+    const checks = [];
+    draft.locales['zh-Hant'].characters.forEach(character => {
+      const label = el('label');
+      const input = el('input');
+      input.type = 'checkbox';
+      input.checked = character.id === selectedId;
+      checks.push([character.id, input]);
+      label.append(input, document.createTextNode(character.name));
+      characters.append(label);
+    });
+    panel.append(characters);
+    const htmlLabel = el('label', 'editor-field');
+    htmlLabel.append(el('span', '', 'Plurk HTML 網頁'));
+    const htmlFile = el('input');
+    htmlFile.type = 'file';
+    htmlFile.accept = '.html,.htm,text/html';
+    htmlLabel.append(htmlFile);
+    const resourceLabel = el('label', 'editor-field');
+    resourceLabel.append(el('span', '', '網頁資源資料夾'));
+    const resources = el('input');
+    resources.type = 'file';
+    resources.multiple = true;
+    resources.setAttribute('webkitdirectory', '');
+    resourceLabel.append(resources);
+    panel.append(htmlLabel, resourceLabel);
+    panel.append(button('匯入並更新網站', async () => {
+      if (!title.value.trim() || !date.value || !htmlFile.files.length) throw new Error('請填寫名稱、日期並選擇 HTML 檔案。');
+      if (htmlFile.files[0].size > 20 * 1024 * 1024) throw new Error('HTML 檔案超過 20 MB。');
+      const ids = checks.filter(([, input]) => input.checked).map(([id]) => id);
+      if (!ids.length) throw new Error('請至少選擇一位關聯角色。');
+      const parsed = window.AtelierExchangeImport.parse(await htmlFile.files[0].text(), [...resources.files]);
+      const exchange = { id: uid('exchange'), characterIds: ids, title: title.value.trim(), date: date.value, replies: parsed.replies.map(text => ({ text })) };
+      const next = clone(draft);
+      codes.forEach(code => next.locales[code].characters.find(character => character.id === selectedId).exchanges.push(clone(exchange)));
+      api.validate(next);
+      if (!api.cloud.debugMode) rejectLocalExchangeMedia(next);
+      const description = api.cloud.debugMode
+        ? `將匯入 ${parsed.replies.length} 則回覆、${parsed.files.length} 個圖片，並套用整份本機草稿預覽。圖片僅存於此瀏覽器；清除瀏覽器資料會遺失圖片。`
+        : `將匯入 ${parsed.replies.length} 則回覆、公開上傳 ${parsed.files.length} 個圖片，並發布整份草稿（包含其他未發布修改）。請確認所有內容皆有公開授權。`;
+      if (!await confirmAction('確認匯入並更新？', description)) return;
+      await operation(async () => {
+        message('檢查及儲存圖片中，請稍候…');
+        for (const file of parsed.files) {
+          const bitmap = await createImageBitmap(file);
+          bitmap.close();
+        }
+        let paths;
+        if (api.cloud.debugMode) paths = await window.AtelierExchangeImport.saveLocal(parsed.files);
+        else {
+          paths = new Map();
+          try {
+            for (const [index, file] of parsed.files.entries()) {
+              message(`圖片上傳中 ${index + 1} / ${parsed.files.length}；上傳後圖片立即公開。`);
+              paths.set(file.name, await api.cloud.upload(file));
+            }
+          } catch (error) {
+            throw new Error(`圖片上傳失敗：${error.message}。已上傳的 ${paths.size} 個圖片仍公開存在雲端；作品尚未發布。`);
+          }
+        }
+        codes.forEach(code => {
+          const saved = next.locales[code].characters.find(character => character.id === selectedId).exchanges.find(item => item.id === exchange.id);
+          saved.replies.forEach(reply => {
+            reply.text = reply.text.replace(/\u0000(Sticker|Image):([^\u0000]+)\u0000/g, (_, kind, name) => `[${kind}: ${paths.get(name)}]`);
+          });
+        });
+        api.validate(next);
+        if (api.cloud.debugMode) {
+          draft = next;
+          saveDraft();
+          if (!stored) throw new Error('匯入草稿無法儲存；請下載備份。圖片仍保存在本機瀏覽器。');
+          api.apply(clone(draft), baseVersion);
+          message('匯入完成，已更新本機預覽；圖片只存在此瀏覽器。');
+        } else {
+          let version;
+          try { version = await api.cloud.publish(next, baseVersion); }
+          catch (error) {
+            throw new Error(`發布失敗：${error.message}。已上傳的 ${paths.size} 個圖片仍公開存在雲端；作品尚未發布。`);
+          }
+          draft = next;
+          api.apply(clone(draft), version);
+          baseVersion = version;
+          hasChanges = false;
+          try { localStorage.removeItem(draftKey); }
+          catch (error) { console.warn('已發布，但無法清除本機草稿：', error); }
+          message(`匯入並發布完成！版本 ${version}。`);
+        }
+        drawWork();
+      });
+    }, 'editor-button primary'));
+    work.append(panel);
+  }
+
   function drawProjects() {
     const kind = section === 'trpg' ? 'trpg' : 'creative';
     const label = kind === 'trpg' ? 'TRPG 劇本 / TRPG' : '創作企劃 / Creative Projects';
@@ -542,13 +649,14 @@ window.AtelierEditor = (() => {
   function drawCharacter() {
     const heading = el('div', 'editor-section-heading');
     const labels = { characters: '角色資料 / Characters', gallery: '畫廊作品 / Gallery',
-      stories: '故事章節 / Stories', manga: '漫畫 / Manga', commissions: '委託作品 / Commissions' };
+      stories: '故事章節 / Stories', manga: '漫畫 / Manga', commissions: '委託作品 / Commissions',
+      exchanges: '交流創作 / Creative exchanges' };
     heading.append(el('h2', '', labels[section]));
     if (section === 'characters') heading.append(button('＋ 新增角色', () => {
       const id = uid('oc');
       const character = {
         id, name: '', world: '', summary: '', portrait: 'assets/mira.svg', portraitAlt: '', youtubeUrl: '',
-        tags: [], facts: {}, about: [], gallery: [], chapters: [], commissions: [], artProjects: [], trpgScenarios: []
+        tags: [], facts: {}, about: [], gallery: [], chapters: [], commissions: [], exchanges: [], artProjects: [], trpgScenarios: []
       };
       forLocales(data => data.characters.push(clone(character)));
       selectedId = id;
@@ -626,6 +734,54 @@ window.AtelierEditor = (() => {
       field(card, '委託文章／正文（可留白）', item.text, value => { item.text = value; }, { multiline: true });
       linkedCharacterChecks(card, item, 'commissions', index);
     }, () => ({ id: uid('commission'), characterIds: [selectedId], title: '', date: today(), artistName: '', artistUrl: '', src: '', alt: '', text: '' }));
+    if (section === 'exchanges') plurkImportForm();
+    if (section === 'exchanges') collection(work, '交流創作 / Creative exchanges', data => selectedCharacter(data).exchanges, (card, item, index) => {
+      field(card, '交流創作名稱', item.title, value => { item.title = value; }, { required: true });
+      field(card, '日期', item.date, value => forLocales(data => {
+        selectedCharacter(data).exchanges[index].date = value;
+      }), { type: 'date', required: true });
+      linkedCharacterChecks(card, item, 'exchanges', index);
+      card.append(el('p', 'editor-hint', '只匯入取得公開授權的內容。從 Plurk 複製回覆並貼上，在每則回覆之間另起一行輸入 ---。匯入不會連線 Plurk，也不會儲存回覆 ID。'));
+      const pasted = field(card, '貼上回覆 / Paste replies', '', () => {}, {
+        multiline: true, track: false, hint: '多行回覆可保留原本換行；只有單獨一行的 --- 會分隔回覆。匯入會附加，不會取代既有回覆。'
+      });
+      const fileLabel = el('label', 'editor-field');
+      fileLabel.append(el('span', '', '載入純文字檔 / Load text file'));
+      const file = el('input');
+      file.type = 'file';
+      file.accept = '.txt,text/plain';
+      file.addEventListener('change', async () => {
+        if (!file.files[0]) return;
+        try {
+          if (file.files[0].size > 1000000) throw new Error('文字檔超過 1 MB，請分批匯入。');
+          const text = await file.files[0].text();
+          if (pasted.value && !await confirmAction('取代尚未匯入的文字？', '這只取代貼上區中的文字，不會刪除已匯入的回覆。')) return;
+          pasted.value = text;
+        } catch (error) { errorMessage(error); }
+        finally { file.value = ''; }
+      });
+      fileLabel.append(file);
+      card.append(fileLabel, button('匯入回覆 / Import replies', () => {
+        const parts = pasted.value.split(/^[ \t]*---[ \t]*\r?$/m).map(text => text.trim());
+        if (!pasted.value.trim() || parts.some(text => !text)) throw new Error('請貼上回覆，且分隔線前後都必須有內容。');
+        const next = clone(draft);
+        codes.forEach(code => {
+          const target = next.locales[code].characters.find(value => value.id === selectedId).exchanges[index];
+          parts.forEach(text => target.replies.push({ text: code === editLanguage ? text : '' }));
+        });
+        api.validate(next, { allowIncomplete: true });
+        draft = next;
+        openEntries.add(current().characters.find(value => value.id === selectedId).exchanges[index]);
+        changed();
+        drawWork();
+        if (stored) message(`已匯入 ${parts.length} 則回覆；請檢查內容並補齊其他語言。`);
+      }));
+      const getReplies = data => selectedCharacter(data).exchanges[index].replies;
+      collection(card, '回覆 / Replies', getReplies, (replyCard, reply) => {
+        field(replyCard, '回覆內容', reply.text, value => { reply.text = value; }, { multiline: true, required: true });
+        replyCard.append(el('p', 'editor-hint', '圖片可使用 [Image: assets/exchange-media/檔名]，貼圖可使用 [Sticker: 檔名]；兩者也可使用已允許的雲端圖片網址。請確認圖片已存在且有展示授權。'));
+      }, () => ({ text: '' }));
+    }, () => ({ id: uid('exchange'), characterIds: [selectedId], title: '', date: today(), replies: [] }));
     if (section === 'stories' || section === 'manga') collection(work, section === 'manga' ? '漫畫' : '故事章節', data => selectedCharacter(data).chapters, (card, item, index) => {
       field(card, '章節標題', item.title, value => { item.title = value; }, { required: true });
       field(card, '作者 / 來源', item.credit, value => { item.credit = value; }, { required: true });
@@ -740,11 +896,11 @@ window.AtelierEditor = (() => {
       });
       const danger = el('div', 'editor-danger-zone');
       danger.append(button('刪除此角色及相關關係', async () => {
-        if (!await confirmAction('確定刪除整個角色？', '作品若還關聯其他角色，會保留並移到其他角色名下；只關聯此角色的章節、畫廊項目與委託作品會一起移除。相關關係也會刪除，雲端圖片不會刪除。請先下載備份。')) return;
+        if (!await confirmAction('確定刪除整個角色？', '作品若還關聯其他角色，會保留並移到其他角色名下；只關聯此角色的章節、畫廊、委託及交流創作會一起移除。相關關係也會刪除，雲端圖片不會刪除。請先下載備份。')) return;
         forLocales(data => {
           const removed = data.characters.find(item => item.id === selectedId);
           const remaining = data.characters.filter(item => item.id !== selectedId);
-          ['gallery', 'chapters', 'commissions'].forEach(key => {
+          ['gallery', 'chapters', 'commissions', 'exchanges'].forEach(key => {
             removed[key].forEach(entry => {
               const replacementId = entry.characterIds.find(id => id !== selectedId && remaining.some(item => item.id === id));
               if (replacementId) {
@@ -754,7 +910,7 @@ window.AtelierEditor = (() => {
             });
           });
           remaining.forEach(character => {
-            ['gallery', 'chapters', 'commissions'].forEach(key => {
+            ['gallery', 'chapters', 'commissions', 'exchanges'].forEach(key => {
               character[key].forEach(entry => {
                 entry.characterIds = entry.characterIds.filter(id => id !== selectedId);
               });
@@ -824,6 +980,10 @@ window.AtelierEditor = (() => {
         character.about.forEach((part, i) => fillText(part, original.about[i], ['title', 'text']));
         character.gallery.forEach((art, i) => fillText(art, original.gallery[i], ['title', 'alt', 'credit']));
         character.commissions.forEach((commission, i) => fillText(commission, original.commissions[i], ['title', 'alt', 'text']));
+        character.exchanges.forEach((exchange, i) => {
+          fillText(exchange, original.exchanges[i], ['title']);
+          exchange.replies.forEach((reply, j) => fillText(reply, original.exchanges[i].replies[j], ['text']));
+        });
         character.chapters.forEach((chapter, i) => {
           fillText(chapter, original.chapters[i], ['title', 'credit']);
           if (!chapter.paragraphs.length) chapter.paragraphs = clone(original.chapters[i].paragraphs);
@@ -873,7 +1033,7 @@ window.AtelierEditor = (() => {
       editLanguage = value;
       drawWork();
     }, false);
-    choice(tools, '編輯區域 / Section', section, [['characters', '角色 / Characters'], ['gallery', '畫廊 / Gallery'], ['stories', '故事 / Stories'], ['manga', '漫畫 / Manga'], ['commissions', '委託作品 / Commissions'], ['projects', '創作企劃 / Creative Projects'], ['trpg', 'TRPG 劇本 / TRPG'], ['relationships', '角色關係 / Relationships'], ['site', '首頁 / Homepage']], value => {
+    choice(tools, '編輯區域 / Section', section, [['characters', '角色 / Characters'], ['gallery', '畫廊 / Gallery'], ['stories', '故事 / Stories'], ['manga', '漫畫 / Manga'], ['commissions', '委託作品 / Commissions'], ['exchanges', '交流創作 / Creative exchanges'], ['projects', '創作企劃 / Creative Projects'], ['trpg', 'TRPG 劇本 / TRPG'], ['relationships', '角色關係 / Relationships'], ['site', '首頁 / Homepage']], value => {
       section = value;
       drawWork();
     }, false);
@@ -916,6 +1076,7 @@ window.AtelierEditor = (() => {
   async function publish() {
     await operation(async () => {
       api.validate(draft);
+      if (!api.cloud.debugMode) rejectLocalExchangeMedia(draft);
       const invalid = work.querySelector(':invalid');
       if (invalid) {
         for (let parent = invalid.parentElement; parent && parent !== work; parent = parent.parentElement) {
